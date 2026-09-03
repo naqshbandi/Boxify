@@ -10,20 +10,19 @@
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // --- اپنی فائر بیس کنفیگریشن یہاں پیسٹ کریں ---
-        
-  // Your web app's Firebase configuration
-  const firebaseConfig = {
-    apiKey: "AIzaSyAZTA87zhyJRHaCIKVDEG36E9wLR-Qnt80",
-    authDomain: "boxifyapp-6f63f.firebaseapp.com",
-    projectId: "boxifyapp-6f63f",
-    storageBucket: "boxifyapp-6f63f.firebasestorage.app",
-    messagingSenderId: "845814985925",
-    appId: "1:845814985925:web:b7583e2feed78b4ea82cac"
-  };
+        // Your Web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAZTA87zhyJRHazKVDEGHE3wLR-2nt30",
+            authDomain: "boxifyapp-6f63f.firebaseapp.com",
+            projectId: "boxifyapp-6f63f",
+            storageBucket: "boxifyapp-6f63f.appspot.com",
+            messagingSenderId: "845814985925",
+            appId: "1:845814985925:web:b7531e2feed7Db4ea2cac"
+        };
 
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
         // سرور سائیڈ کنفیگریشن (ایڈمن یوزر نیم فرنٹ اینڈ سے مکمل خفیہ)
         const SERVER_ADMIN_USERNAME = "Dr-Adnan";
@@ -33,7 +32,6 @@
         window.serverAdminUsername = SERVER_ADMIN_USERNAME;
         window.firebaseModules = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, doc, setDoc, getDoc, updateDoc, increment };
     </script>
-
     <style>
         :root {
             --bg-color: #0f172a;
@@ -115,6 +113,7 @@
 
         .auth-box h2 {
             margin-bottom: 20px;
+            color: var(--text-main);
         }
 
         .form-group {
@@ -125,7 +124,7 @@
         .form-group label {
             display: block;
             font-size: 14px;
-            color: var(--text-muted);
+            color: var(--text-main);
             margin-bottom: 5px;
         }
 
@@ -146,7 +145,7 @@
             text-align: left;
             margin-bottom: 10px;
             font-size: 13px;
-            color: var(--text-muted);
+            color: var(--text-main);
         }
 
         .terms-group input[type="checkbox"] {
@@ -208,6 +207,7 @@
             margin-bottom: 20px;
             text-align: center;
             font-size: 22px;
+            color: var(--text-main);
         }
 
         .packages-grid {
@@ -297,6 +297,7 @@
             border: 2px solid transparent;
             text-align: center;
             padding: 5px;
+            color: #ffffff;
         }
 
         .box-item:hover:not(.opened):not(.disabled) {
@@ -354,7 +355,7 @@
 
         .withdraw-option-card p {
             font-size: 13px;
-            color: var(--text-muted);
+            color: var(--text-main);
             margin-bottom: 15px;
             line-height: 1.4;
         }
@@ -374,12 +375,16 @@
         .modal-overlay {
             display: none;
             position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             background: rgba(0,0,0,0.7);
             justify-content: center;
             align-items: center;
             z-index: 1000;
         }
+
         .modal-content {
             background: var(--card-bg);
             border: 1px solid var(--border);
@@ -391,31 +396,30 @@
             overflow-y: auto;
             text-align: left;
         }
+
         .modal-content h3 {
             color: var(--warning);
             margin-bottom: 15px;
         }
+
         .modal-content p {
             font-size: 14px;
-            color: var(--text-muted);
+            color: var(--text-main);
             line-height: 1.6;
             margin-bottom: 15px;
         }
     </style>
 </head>
 <body>
-
     <div class="app-container">
         <!-- اتھنٹیکیشن سکرین (سائن ان اور سائن اپ ٹیبز) -->
         <div id="auth-view" class="content-body">
             <div class="auth-box">
                 <h2>Boxify Portal</h2>
-                
                 <div class="tab-buttons">
                     <button class="tab-btn active" id="btn-tab-signin" onclick="switchAuthTab('signin')">Sign In</button>
                     <button class="tab-btn" id="btn-tab-signup" onclick="switchAuthTab('signup')">Sign Up</button>
                 </div>
-
                 <!-- سائن ان فارم -->
                 <form id="signin-form">
                     <div class="form-group">
@@ -429,7 +433,6 @@
                     <div id="signin-error" class="msg-error" style="margin-bottom: 10px;"></div>
                     <button type="submit" class="btn">Sign In</button>
                 </form>
-
                 <!-- سائن اپ فارم -->
                 <form id="signup-form" style="display: none;">
                     <div class="form-group">
@@ -444,22 +447,18 @@
                         <label>Password</label>
                         <input type="password" id="signup-password" class="form-control" required placeholder="••••••••">
                     </div>
-
                     <!-- ریفرل یوزر نام درج کرنے کی جگہ -->
                     <div class="form-group">
                         <label>یہاں ریفرل یوزر نام یا کوڈ درج کریں (اگر ہو)</label>
                         <input type="text" id="signup-ref-code" class="form-control" placeholder="Optional referral code">
                     </div>
-
                     <div class="terms-group">
                         <input type="checkbox" id="terms-checkbox">
-                        <label for="terms-checkbox" style="display: inline; color: var(--text-muted); cursor: pointer;">
+                        <label for="terms-checkbox" style="display: inline; color: var(--text-main); cursor: pointer;">
                             I agree to the <a onclick="openTermsModal(event)">Terms & Conditions</a> stating that the company is not responsible for any profit, loss, or withdrawal issues.
                         </label>
                     </div>
-
                     <div id="signup-error" class="msg-error" style="margin-bottom: 10px;"></div>
-
                     <button type="submit" class="btn">Create Account</button>
                 </form>
             </div>
@@ -476,16 +475,14 @@
                     <div class="stat-badge">Referrals: <span id="lbl-referrals">0</span></div>
                 </div>
             </div>
-
             <!-- ذاتی ریفرل لنک شیئر کرنے کا سیکشن -->
             <div style="background: rgba(99, 102, 241, 0.05); border: 1px solid var(--border); padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
                 <div>
-                    <span style="font-size: 13px; color: var(--text-muted);">آپ کا ذاتی ریفرل لنک:</span>
+                    <span style="font-size: 13px; color: var(--text-main);">آپ کا ذاتی ریفرل لنک:</span>
                     <input type="text" id="my-referral-link" readonly class="form-control" style="padding: 6px; font-size: 13px; margin-top: 4px; background: var(--bg-color);" value="">
                 </div>
                 <button class="btn" style="width: auto; padding: 8px 15px; font-size: 13px; margin-top: 15px;" onclick="copyReferralLink()">لنک کاپی کریں</button>
             </div>
-
             <div class="content-body">
                 <div id="packages-section" class="packages-container">
                     <h3>Select Your Deposit Package</h3>
@@ -516,17 +513,14 @@
                         </div>
                     </div>
                 </div>
-
                 <div id="deposit-section" class="deposit-section">
                     <h3 style="margin-bottom: 15px; text-align: center;">Payment & Verification</h3>
-                    
                     <div class="raast-info-box">
                         <h4>یہاں راس آئی ڈی درج ہے</h4>
                         <p style="font-size: 18px; font-weight: bold; margin: 5px 0;" id="raast-id-display">03001234567</p>
-                        <p style="font-size: 13px; color: var(--text-muted);">Name: Adnan Ahmad (Account Title)</p>
+                        <p style="font-size: 13px; color: var(--text-main);">Name: Adnan Ahmad (Account Title)</p>
                         <p style="font-size: 14px; margin-top: 8px;">Selected Amount: <strong id="selected-pkg-amount" style="color: var(--accent);">0</strong> PKR</p>
                     </div>
-
                     <form id="deposit-verify-form">
                         <div class="form-group">
                             <label>Transaction ID (Trx ID / Reference No)</label>
@@ -538,36 +532,29 @@
                         </div>
                         <button type="submit" class="btn" style="margin-top: 10px;">Submit Deposit Request</button>
                     </form>
-
                     <!-- ایڈمن اتھارٹی پینل: یہ صرف سرور سائیڈ ویری فائیڈ Dr-Adnan کے لیے ظاہر ہوگا -->
                     <div id="admin-panel-section" style="margin-top: 25px; border-top: 2px dashed var(--warning); padding-top: 15px; text-align: center; display: none;">
                         <p style="font-size: 14px; color: var(--warning); font-weight: bold; margin-bottom: 8px;">[Admin Authority Panel]</p>
-                        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">ایڈمن اس بٹن کے ذریعے کسی بھی یوزر کو بغیر تصدیق کے سیدھا گیم کھیلنے کی اجازت دے سکتا ہے:</p>
+                        <p style="font-size: 12px; color: var(--text-main); margin-bottom: 10px;">ایڈمن اس بٹن کے ذریعے کسی بھی یوزر کو بغیر تصدیق کے سیدھا گیم کھیلنے کی اجازت دے سکتا ہے:</p>
                         <button class="btn" style="background: var(--accent);" onclick="adminApproveDeposit()">Authorize & Grant Game Access (Admin Override)</button>
                     </div>
                 </div>
-
                 <div id="game-section" class="game-section">
                     <div class="game-info">
                         <div>Verified Deposit: <strong id="current-deposit-val">0</strong> PKR</div>
                         <div>Boxes Remaining: <strong id="boxes-remaining">3</strong> / 3</div>
                     </div>
-                    
-                    <p style="margin-bottom: 15px; color: var(--text-muted); font-size: 14px;">مجموعی طور پر 10 بکس ہیں، ان میں سے کوئی سے 3 بکس کھولیں:</p>
-                    
+                    <p style="margin-bottom: 15px; color: var(--text-main); font-size: 14px;">مجموعی طور پر 10 بکس ہیں، ان میں سے کوئی سے 3 بکس کھولیں:</p>
                     <div class="boxes-grid" id="boxes-grid-container">
                     </div>
-
                     <div id="prize-action-card" class="prize-action-card">
                         <h4 id="prize-announcement" style="margin-bottom: 10px; color: var(--accent);"></h4>
                         <button class="btn" id="accept-prize-btn" onclick="acceptCurrentPrize()" style="max-width: 200px; margin: 0 auto;">Accept Prize</button>
                     </div>
                 </div>
-
                 <div class="withdraw-container">
                     <h3 style="font-size: 18px; margin-bottom: 5px;">Withdrawal Center</h3>
-                    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">Choose your preferred withdrawal option below:</p>
-                    
+                    <p style="font-size: 13px; color: var(--text-main); margin-bottom: 15px;">Choose your preferred withdrawal option below:</p>
                     <div class="withdraw-options-grid">
                         <div class="withdraw-option-card">
                             <h4>Option 1: Winnings Withdrawal</h4>
@@ -575,7 +562,6 @@
                             <div id="msg-winnings" style="margin-bottom: 10px;"></div>
                             <button class="btn" onclick="requestWinningsWithdrawal()">Withdraw Winnings</button>
                         </div>
-
                         <div class="withdraw-option-card">
                             <h4>Option 2: Referral Commission</h4>
                             <p>Withdraw your referral commission instantly anytime with zero restrictions or conditions.</p>
@@ -587,7 +573,7 @@
             </div>
         </div>
     </div>
-
+    
     <div id="terms-modal" class="modal-overlay">
         <div class="modal-content">
             <h3>Terms & Conditions</h3>
@@ -606,7 +592,6 @@
         let referralCommissionBalance = 0;
         let referralCount = 0;
         let gamesPlayedCount = 0;
-        
         let currentDeposit = 0;
         let openedCount = 0;
         let currentTempPrize = 0;
@@ -618,7 +603,6 @@
             const signupForm = document.getElementById('signup-form');
             const btnSignin = document.getElementById('btn-tab-signin');
             const btnSignup = document.getElementById('btn-tab-signup');
-
             document.getElementById('signin-error').innerText = '';
             document.getElementById('signup-error').innerText = '';
 
@@ -645,37 +629,32 @@
 
             try {
                 let emailToUse = identifier;
-                // اگر یوزر نیم دیا ہے تو اسے ای میل میں تبدیل کریں یا فائر بیس سے فیچ کریں
                 if (!identifier.includes("@")) {
                     emailToUse = identifier.toLowerCase() + "@boxify.app";
                 }
-
                 const userCredential = await window.firebaseModules.signInWithEmailAndPassword(window.appAuth, emailToUse, pWord);
                 const user = userCredential.user;
-                
-                // فائر بیس سے یوزر ڈیٹا حاصل کریں
+
                 const docRef = window.firebaseModules.doc(window.appDb, "users", user.uid);
                 const docSnap = await window.firebaseModules.getDoc(docRef);
-
                 if (docSnap.exists()) {
                     let data = docSnap.data();
                     currentUsername = data.username;
                     currentUserEmail = user.email;
                     gameWinningsBalance = data.winnings || 0;
                     referralCommissionBalance = data.commission || 0;
-                    referralsCount = data.referrals || 0;
+                    referralCount = data.referrals || 0;
                     gamesPlayedCount = data.gamesPlayed || 0;
                 } else {
                     currentUsername = identifier;
                 }
-
                 launchDashboard();
             } catch (err) {
                 errorEl.innerText = "Invalid credentials or user not found. Please check and try again.";
             }
         });
 
-        // فائر بیس سائن اپ (شرائط کا چیک باکس چیک کرنا لازمی ہے)
+        // فائر بیس سائن اپ
         document.getElementById('signup-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             const termsChecked = document.getElementById('terms-checkbox').checked;
@@ -696,7 +675,6 @@
                 return;
             }
 
-            // سیکیورٹی: کوئی عام یوزر سرور ایڈمن کا نام استعمال نہیں کر سکتا
             if (uName.toLowerCase() === window.serverAdminUsername.toLowerCase()) {
                 errorEl.innerText = "This username is reserved for the administrator and cannot be registered.";
                 return;
@@ -706,7 +684,6 @@
                 const userCredential = await window.firebaseModules.createUserWithEmailAndPassword(window.appAuth, email, pWord);
                 const user = userCredential.user;
 
-                // فائر بیس فائر اسٹور میں یوزر کا ریکارڈ محفوظ کریں
                 await window.firebaseModules.setDoc(window.firebaseModules.doc(window.appDb, "users", user.uid), {
                     username: uName,
                     email: email,
@@ -729,17 +706,14 @@
             let personalLink = window.location.origin + window.location.pathname + "?ref=" + encodeURIComponent(currentUsername);
             document.getElementById('my-referral-link').value = personalLink;
             document.getElementById('logged-username-display').innerText = currentUsername;
-
             document.getElementById('auth-view').style.display = 'none';
             document.getElementById('dashboard-view').style.display = 'block';
 
-            // صرف سرور سائیڈ ویری فائیڈ Dr-Adnan کے لیے ایڈمن پینل شو ہوگا
             if (currentUsername.toLowerCase() === window.serverAdminUsername.toLowerCase()) {
                 document.getElementById('admin-panel-section').style.display = 'block';
             } else {
                 document.getElementById('admin-panel-section').style.display = 'none';
             }
-
             updateStatsUI();
         }
 
@@ -777,39 +751,31 @@
             e.preventDefault();
             const trxId = document.getElementById('trx-id').value;
             const fileInput = document.getElementById('payment-screenshot').files[0];
-
             if (!trxId || !fileInput) {
                 alert("Please provide both Transaction ID and Screenshot.");
                 return;
             }
-
             alert("Your deposit request has been submitted successfully to Firebase backend!");
         });
 
-        // یہ فنکشن صرف سرور سائیڈ ویری فائیڈ Dr-Adnan کے لیے اتھرائزڈ ہے
         function adminApproveDeposit() {
             if (currentUsername.toLowerCase() !== window.serverAdminUsername.toLowerCase()) {
                 alert("Unauthorized action!");
                 return;
             }
-
             document.getElementById('deposit-section').style.display = 'none';
             document.getElementById('game-section').style.display = 'block';
-            
             openedCount = 0;
             gameActive = true;
-            
             document.getElementById('current-deposit-val').innerText = currentDeposit;
             document.getElementById('boxes-remaining').innerText = 3;
             document.getElementById('prize-action-card').style.display = 'none';
-
             generateBoxesPrizes();
             renderBoxes();
         }
 
         function generateBoxesPrizes() {
-            let maxTotalAllowed = currentDeposit * 0.6; 
-            
+            let maxTotalAllowed = currentDeposit * 0.6;
             let p1 = Math.floor(Math.random() * (maxTotalAllowed * 0.3)) + 5;
             let p2 = Math.floor(Math.random() * (maxTotalAllowed * 0.3)) + 5;
             let p3 = Math.floor(Math.max(5, maxTotalAllowed - p1 - p2));
@@ -817,10 +783,8 @@
                 p3 = Math.floor(maxTotalAllowed - p1 - p2);
                 if(p3 < 5) p3 = 5;
             }
-
             let remainingPrizes = [1000, 500, 100, 50, 20, 10, 0];
             remainingPrizes.sort(() => Math.random() - 0.5);
-
             generatedPrizes = [
                 { prize: p1, clickable: true },
                 { prize: p2, clickable: true },
@@ -833,24 +797,20 @@
                 { prize: remainingPrizes[5], clickable: false },
                 { prize: remainingPrizes[6], clickable: false }
             ];
-            
             generatedPrizes.sort(() => Math.random() - 0.5);
         }
 
         function renderBoxes() {
             const container = document.getElementById('boxes-grid-container');
             container.innerHTML = '';
-
             generatedPrizes.forEach((item, index) => {
                 const box = document.createElement('div');
                 box.className = 'box-item';
                 box.innerText = `Box ${index + 1}`;
                 box.dataset.index = index;
-
                 box.onclick = function() {
                     handleBoxClick(box, item);
                 };
-
                 container.appendChild(box);
             });
         }
@@ -858,15 +818,12 @@
         function handleBoxClick(boxElement, item) {
             if (!gameActive) return;
             if (boxElement.classList.contains('opened') || boxElement.classList.contains('disabled')) return;
-            
             let clickableCountOpened = document.querySelectorAll('.box-item.opened').length;
             if (clickableCountOpened >= 3) return;
 
             boxElement.classList.add('opened');
             boxElement.innerHTML = `Box<br><strong>${item.prize} PKR</strong>`;
-            
             currentTempPrize = item.prize;
-
             document.getElementById('prize-announcement').innerText = `Congratulations! You won ${item.prize} PKR from this box.`;
             document.getElementById('prize-action-card').style.display = 'block';
         }
@@ -875,8 +832,6 @@
             gameWinningsBalance += currentTempPrize;
             openedCount++;
             updateStatsUI();
-            
-            // فائر بیس میں وننگز اپ ڈیٹ کریں
             try {
                 const user = window.appAuth.currentUser;
                 if (user) {
@@ -887,10 +842,8 @@
             } catch (e) {
                 console.error("Firebase update error:", e);
             }
-
             document.getElementById('prize-action-card').style.display = 'none';
             document.getElementById('boxes-remaining').innerText = 3 - openedCount;
-
             if (openedCount === 3) {
                 revealRemainingBoxes();
             }
@@ -900,7 +853,6 @@
             gameActive = false;
             gamesPlayedCount++;
             updateStatsUI();
-
             try {
                 const user = window.appAuth.currentUser;
                 if (user) {
@@ -911,7 +863,6 @@
             } catch (e) {
                 console.error("Firebase game count error:", e);
             }
-            
             const boxes = document.querySelectorAll('.box-item');
             boxes.forEach((box, index) => {
                 if (!box.classList.contains('opened')) {
@@ -919,7 +870,6 @@
                     box.innerHTML = `Box ${index + 1}<br><span style="font-size:12px; color:#facc15;">(${generatedPrizes[index].prize} PKR)</span>`;
                 }
             });
-
             setTimeout(() => {
                 alert("You have completed this session (3 boxes opened). Returning to packages view.");
                 document.getElementById('game-section').style.display = 'none';
@@ -958,4 +908,3 @@
     </script>
 </body>
 </html>
-
