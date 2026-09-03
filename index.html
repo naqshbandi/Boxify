@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boxify - پرافیشنل ریوارڈ ڈیش بورڈ</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --accent: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 900px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            background: rgba(15, 23, 42, 0.6);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .user-stats {
+            display: flex;
+            gap: 20px;
+        }
+
+        .stat-badge {
+            background: rgba(99, 102, 241, 0.1);
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            font-size: 14px;
+        }
+
+        .stat-badge span {
+            font-weight: bold;
+            color: var(--accent);
+        }
+
+        .content-body {
+            padding: 30px;
+        }
+
+        .auth-box {
+            max-width: 400px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .auth-box h2 {
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            text-align: right;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg-color);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-size: 16px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background: var(--primary-hover);
+        }
+
+        .packages-container h3 {
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 22px;
+        }
+
+        .packages-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .package-card {
+            background: var(--bg-color);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .package-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.2);
+        }
+
+        .package-card h4 {
+            font-size: 20px;
+            color: var(--accent);
+            margin-bottom: 10px;
+        }
+
+        /* Deposit Verification Modal/Section */
+        .deposit-section {
+            display: none;
+            background: var(--bg-color);
+            border: 1px solid var(--border);
+            padding: 25px;
+            border-radius: 12px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .raast-info-box {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px dashed var(--accent);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .raast-info-box h4 {
+            color: var(--accent);
+            margin-bottom: 5px;
+        }
+
+        .game-section {
+            display: none;
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            background: var(--bg-color);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .boxes-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .box-item {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            height: 100px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s;
+            border: 2px solid transparent;
+            text-align: center;
+            padding: 5px;
+        }
+
+        .box-item:hover:not(.opened):not(.disabled) {
+            transform: scale(1.05);
+            border-color: #93c5fd;
+        }
+
+        .box-item.opened {
+            background: #065f46;
+            cursor: default;
+        }
+
+        .box-item.disabled {
+            background: #475569;
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .prize-action-card {
+            background: var(--bg-color);
+            border: 1px solid var(--border);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .withdraw-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .msg-error {
+            color: var(--danger);
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .msg-success {
+            color: var(--accent);
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .logout-btn {
+            background: transparent;
+            color: var(--danger);
+            border: 1px solid var(--danger);
+            padding: 6px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .logout-btn:hover {
+            background: var(--danger);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- لاگ ان / سائن اپ سیکشن -->
+        <div id="auth-view" class="content-body">
+            <div class="auth-box">
+                <h2>Boxify - سائن ان / سائن اپ</h2>
+                <form id="login-form">
+                    <div class="form-group">
+                        <label>ای میل ایڈریس</label>
+                        <input type="email" id="auth-email" class="form-control" required placeholder="name@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label>پاسورڈ</label>
+                        <input type="password" id="auth-password" class="form-control" required placeholder="••••••••">
+                    </div>
+                    <button type="submit" class="btn">ڈیش بورڈ میں داخل ہوں</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- مین ڈیش بورڈ -->
+        <div id="dashboard-view" style="display: none;">
+            <div class="dashboard-header">
+                <h3>Boxify ڈیش بورڈ</h3>
+                <div class="user-stats">
+                    <div class="stat-badge">بیلنس: <span id="lbl-balance">0</span> روپے</div>
+                    <div class="stat-badge">ریفرلز: <span id="lbl-referrals">1</span>/5</div>
+                </div>
+                <button class="logout-btn" onclick="logout()">لاگ آؤٹ</button>
+            </div>
+
+            <div class="content-body">
+                <!-- پیکجز سلیکشن ویو -->
+                <div id="packages-section" class="packages-container">
+                    <h3>اپنا ڈپازٹ پیکج منتخب کریں</h3>
+                    <div class="packages-grid">
+                        <div class="package-card" onclick="initiateDeposit(100)">
+                            <h4>100 روپے</h4>
+                            <p>تین لکی باکس چانس</p>
+                        </div>
+                        <div class="package-card" onclick="initiateDeposit(200)">
+                            <h4>200 روپے</h4>
+                            <p>تین لکی باکس چانس</p>
+                        </div>
+                        <div class="package-card" onclick="initiateDeposit(500)">
+                            <h4>500 روپے</h4>
+                            <p>تین لکی باکس چانس</p>
+                        </div>
+                        <div class="package-card" onclick="initiateDeposit(1000)">
+                            <h4>1000 روپے</h4>
+                            <p>تین لکی باکس چانس</p>
+                        </div>
+                        <div class="package-card" onclick="initiateDeposit(5000)">
+                            <h4>5000 روپے</h4>
+                            <p>تین لکی باکس چانس</p>
+                        </div>
+                        <div class="package-card" onclick="initiateDeposit(10000)">
+                            <h4>10000 روپے</h4>
+                            <p>تین لکی باکس چانس</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ایزی پیسہ / راءست آئی ڈی ڈپازٹ اور سکرین شاٹ ویریفیکیشن سیکشن -->
+                <div id="deposit-section" class="deposit-section">
+                    <h3 style="margin-bottom: 15px; text-align: center;">رقم کی ادائیگی اور تصدیق</h3>
+                    
+                    <div class="raast-info-box">
+                        <h4>EasyPaisa / Raast ID</h4>
+                        <p style="font-size: 18px; font-weight: bold; margin: 5px 0;" id="raast-id-display">0300-1234567</p>
+                        <p style="font-size: 13px; color: var(--text-muted);">نام: Adnan Ahmad (اکاؤنٹ ٹائتل)</p>
+                        <p style="font-size: 14px; margin-top: 8px;">منتخب کردہ رقم: <strong id="selected-pkg-amount" style="color: var(--accent);">0</strong> روپے</p>
+                    </div>
+
+                    <form id="deposit-verify-form">
+                        <div class="form-group">
+                            <label>ٹرانزیکشن آئی ڈی (Trx ID / Reference No)</label>
+                            <input type="text" id="trx-id" class="form-control" required placeholder="مثلاً: 8392019283">
+                        </div>
+                        <div class="form-group">
+                            <label>ادائیگی کا سکرین شاٹ (Screenshot upload کریں)</label>
+                            <input type="file" id="payment-screenshot" class="form-control" accept="image/*" required style="padding: 8px;">
+                        </div>
+                        <button type="submit" class="btn" style="margin-top: 10px;">ڈپॉزٹ کی تصدیق کے لیے درخواست بھیجیں</button>
+                    </form>
+
+                    <!-- ایڈمن ٹیسٹنگ ویریفیکیشن بٹن (ٹیسٹ کرنے کے لیے کہ ویریفائی ہونے پر کیا ہوگا) -->
+                    <div id="admin-verify-simulator" style="margin-top: 20px; border-top: 1px dashed var(--border); padding-top: 15px; text-align: center; display: none;">
+                        <p style="font-size: 13px; color: var(--warning); margin-bottom: 8px;">[ایڈمن پینل ٹیسٹ simulation]</p>
+                        <button class="btn" style="background: var(--accent);" onclick="adminApproveDeposit()">خودکار ویریفائی کریں (منظور کریں)</button>
+                    </div>
+                </div>
+
+                <!-- گیم سیکشن (تصدیق کے بعد نظر آئے گا) -->
+                <div id="game-section" class="game-section">
+                    <div class="game-info">
+                        <div>تصدیق شدہ ڈپازٹ: <strong id="current-deposit-val">0</strong> روپے</div>
+                        <div>باقی بکس جنہیں کھولنا ہے: <strong id="boxes-remaining">3</strong> / 3</div>
+                    </div>
+                    
+                    <p style="margin-bottom: 15px; color: var(--text-muted); font-size: 14px;">باری باری 3 بکس کھولیں، ہر باکس کا انعام قبول کریں:</p>
+                    
+                    <div class="boxes-grid" id="boxes-grid-container">
+                        <!-- 10 Boxes generated via JS -->
+                    </div>
+
+                    <div id="prize-action-card" class="prize-action-card">
+                        <h4 id="prize-announcement" style="margin-bottom: 10px; color: var(--accent);"></h4>
+                        <button class="btn" id="accept-prize-btn" onclick="acceptCurrentPrize()" style="max-width: 200px; margin: 0 auto;">انعام قبول کریں</button>
+                    </div>
+                </div>
+
+                <!-- ودڈرال سیکشن -->
+                <div class="withdraw-section">
+                    <div>
+                        <strong>رقم نکلوائیں (Withdraw)</strong>
+                        <div id="withdraw-msg" class="msg-error"></div>
+                    </div>
+                    <button class="btn" onclick="requestWithdrawal()" style="width: auto; padding: 10px 20px;">ودڈرال کی درخواست</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let userBalance = 0;
+        let referralCount = 1;
+        let currentDeposit = 0;
+        let openedCount = 0;
+        let currentTempPrize = 0;
+        let activeBoxElement = null;
+        let gameActive = false;
+        let generatedPrizes = [];
+
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            document.getElementById('auth-view').style.display = 'none';
+            document.getElementById('dashboard-view').style.display = 'block';
+            updateStatsUI();
+        });
+
+        function updateStatsUI() {
+            document.getElementById('lbl-balance').innerText = userBalance;
+            document.getElementById('lbl-referrals').innerText = referralCount;
+        }
+
+        // جب یوزر پیکج پر کلک کرے گا تو ایزی پیسہ / راءست ڈپازٹ فارم ظاہر ہوگا
+        function initiateDeposit(amount) {
+            currentDeposit = amount;
+            document.getElementById('packages-section').style.display = 'none';
+            document.getElementById('selected-pkg-amount').innerText = amount;
+            document.getElementById('deposit-section').style.display = 'block';
+            document.getElementById('admin-verify-simulator').style.display = 'block';
+        }
+
+        // یوزر جب سکرین شاٹ اور ٹرانزیکشن آئی ڈی دے کر فارم سبمٹ کرے گا
+        document.getElementById('deposit-verify-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const trxId = document.getElementById('trx-id').value;
+            const fileInput = document.getElementById('payment-screenshot').files[0];
+
+            if (!trxId || !fileInput) {
+                alert("براہ کرم ٹرانزیکشن آئی ڈی اور سکرین شاٹ دونوں فراہم کریں۔");
+                return;
+            }
+
+            alert("آپ کی ڈپازٹ کی درخواست موصول ہو گئی ہے۔ ایڈمن کی جانب سے تصدیق (Verification) کا انتظار کریں۔ (ٹیسٹ کے لیے نیچے سبز بٹن دبائیں)");
+        });
+
+        // ایڈمن کی جانب سے ویریفکیشن منظور ہونے کا فنکشن (یہ بیلنس شو کرے گا اور باکسز کھولے گا)
+        function adminApproveDeposit() {
+            document.getElementById('deposit-section').style.display = 'none';
+            document.getElementById('game-section').style.display = 'block';
+            
+            openedCount = 0;
+            gameActive = true;
+            
+            document.getElementById('current-deposit-val').innerText = currentDeposit;
+            document.getElementById('boxes-remaining').innerText = 3;
+            document.getElementById('prize-action-card').style.display = 'none';
+
+            generateBoxesPrizes();
+            renderBoxes();
+        }
+
+        // ڈپازٹ کے حساب سے انعامات کا تناسب طے کرنا (Max ~50% of deposit across 3 boxes)
+        function generateBoxesPrizes() {
+            let maxTotalAllowed = currentDeposit * 0.5; 
+            
+            let p1 = Math.floor(Math.random() * (maxTotalAllowed * 0.3)) + 5;
+            let p2 = Math.floor(Math.random() * (maxTotalAllowed * 0.3)) + 5;
+            let p3 = Math.floor(Math.max(5, maxTotalAllowed - p1 - p2));
+            if (p1 + p2 + p3 > maxTotalAllowed) {
+                p3 = Math.floor(maxTotalAllowed - p1 - p2);
+                if(p3 < 5) p3 = 5;
+            }
+
+            let remainingPrizes = [1000, 500, 100, 50, 20, 10, 0];
+            remainingPrizes.sort(() => Math.random() - 0.5);
+
+            generatedPrizes = [
+                { prize: p1, clickable: true },
+                { prize: p2, clickable: true },
+                { prize: p3, clickable: true },
+                { prize: remainingPrizes[0], clickable: false },
+                { prize: remainingPrizes[1], clickable: false },
+                { prize: remainingPrizes[2], clickable: false },
+                { prize: remainingPrizes[3], clickable: false },
+                { prize: remainingPrizes[4], clickable: false },
+                { prize: remainingPrizes[5], clickable: false },
+                { prize: remainingPrizes[6], clickable: false }
+            ];
+            
+            generatedPrizes.sort(() => Math.random() - 0.5);
+        }
+
+        function renderBoxes() {
+            const container = document.getElementById('boxes-grid-container');
+            container.innerHTML = '';
+
+            generatedPrizes.forEach((item, index) => {
+                const box = document.createElement('div');
+                box.className = 'box-item';
+                box.innerText = `بکس ${index + 1}`;
+                box.dataset.index = index;
+
+                box.onclick = function() {
+                    handleBoxClick(box, item);
+                };
+
+                container.appendChild(box);
+            });
+        }
+
+        function handleBoxClick(boxElement, item) {
+            if (!gameActive) return;
+            if (boxElement.classList.contains('opened') || boxElement.classList.contains('disabled')) return;
+            
+            let clickableCountOpened = document.querySelectorAll('.box-item.opened').length;
+            if (clickableCountOpened >= 3) return;
+
+            boxElement.classList.add('opened');
+            boxElement.innerHTML = `بکس<br><strong>${item.prize} روپیہ</strong>`;
+            
+            currentTempPrize = item.prize;
+            activeBoxElement = boxElement;
+
+            document.getElementById('prize-announcement').innerText = `مبارک ہو! آپ نے اس باکس سے ${item.prize} روپے نکالے ہیں۔`;
+            document.getElementById('prize-action-card').style.display = 'block';
+        }
+
+        function acceptCurrentPrize() {
+            userBalance += currentTempPrize;
+            openedCount++;
+            updateStatsUI();
+            
+            document.getElementById('prize-action-card').style.display = 'none';
+            document.getElementById('boxes-remaining').innerText = 3 - openedCount;
+
+            if (openedCount === 3) {
+                revealRemainingBoxes();
+            }
+        }
+
+        function revealRemainingBoxes() {
+            gameActive = false;
+            const boxes = document.querySelectorAll('.box-item');
+            
+            boxes.forEach((box, index) => {
+                if (!box.classList.contains('opened')) {
+                    box.classList.add('disabled');
+                    box.innerHTML = `بکس ${index + 1}<br><span style="font-size:12px; color:#facc15;">(${generatedPrizes[index].prize} روپیہ)</span>`;
+                }
+            });
+
+            setTimeout(() => {
+                alert("آپ کے 3 چانس مکمل ہو چکے ہیں۔ مزید کھیلنے کے لیے نیا ڈپازٹ کریں۔");
+                document.getElementById('game-section').style.display = 'none';
+                document.getElementById('packages-section').style.display = 'block';
+            }, 1500);
+        }
+
+        function requestWithdrawal() {
+            const msgEl = document.getElementById('withdraw-msg');
+            if (referralCount < 3) {
+                msgEl.className = "msg-error";
+                msgEl.innerText = "ودڈرال کے لیے کم از کم 3 سے 10 فعال ریفرلز اور ان کا ڈپازٹ لازمی ہے!";
+            } else {
+                msgEl.className = "msg-success";
+                msgEl.innerText = "آپ کی ودڈرال کی درخواست کامیابی سے جمع ہو گئی ہے!";
+            }
+        }
+
+        function logout() {
+            location.reload();
+        }
+    </script>
+</body>
+</html>
+
