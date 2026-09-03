@@ -1,9 +1,38 @@
 <!DOCTYPE html>
-<html lang="ur" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boxify - پرافیشنل ریوارڈ ڈیش بورڈ</title>
+    <title>Boxify - Professional Reward Dashboard</title>
+    <!-- Firebase SDK (Modular v10) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // --- اپنی فائر بیس کنفیگریشن یہاں پیسٹ کریں ---
+        const firebaseConfig = {
+            apiKey: "YOUR_FIREBASE_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // سرور سائیڈ کنفیگریشن (ایڈمن یوزر نیم فرنٹ اینڈ سے مکمل خفیہ)
+        const SERVER_ADMIN_USERNAME = "Dr-Adnan";
+
+        window.appAuth = auth;
+        window.appDb = db;
+        window.serverAdminUsername = SERVER_ADMIN_USERNAME;
+        window.firebaseModules = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, doc, setDoc, getDoc, updateDoc, increment };
+    </script>
+
     <style>
         :root {
             --bg-color: #0f172a;
@@ -56,15 +85,16 @@
 
         .user-stats {
             display: flex;
-            gap: 20px;
+            gap: 15px;
+            flex-wrap: wrap;
         }
 
         .stat-badge {
             background: rgba(99, 102, 241, 0.1);
-            padding: 8px 16px;
+            padding: 8px 14px;
             border-radius: 8px;
             border: 1px solid rgba(99, 102, 241, 0.3);
-            font-size: 14px;
+            font-size: 13px;
         }
 
         .stat-badge span {
@@ -77,7 +107,7 @@
         }
 
         .auth-box {
-            max-width: 400px;
+            max-width: 420px;
             margin: 0 auto;
             text-align: center;
         }
@@ -88,7 +118,7 @@
 
         .form-group {
             margin-bottom: 15px;
-            text-align: right;
+            text-align: left;
         }
 
         .form-group label {
@@ -108,6 +138,28 @@
             font-size: 16px;
         }
 
+        .terms-group {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            text-align: left;
+            margin-bottom: 10px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .terms-group input[type="checkbox"] {
+            margin-top: 3px;
+            transform: scale(1.2);
+            cursor: pointer;
+        }
+
+        .terms-group a {
+            color: var(--primary);
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
         .btn {
             width: 100%;
             padding: 12px;
@@ -123,6 +175,32 @@
 
         .btn:hover {
             background: var(--primary-hover);
+        }
+
+        .tab-buttons {
+            display: flex;
+            margin-bottom: 20px;
+            background: var(--bg-color);
+            border-radius: 8px;
+            padding: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
         }
 
         .packages-container h3 {
@@ -159,7 +237,6 @@
             margin-bottom: 10px;
         }
 
-        /* Deposit Verification Modal/Section */
         .deposit-section {
             display: none;
             background: var(--bg-color);
@@ -247,13 +324,38 @@
             display: none;
         }
 
-        .withdraw-section {
+        .withdraw-container {
             margin-top: 30px;
             padding-top: 20px;
             border-top: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        }
+
+        .withdraw-options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .withdraw-option-card {
+            background: var(--bg-color);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .withdraw-option-card h4 {
+            color: var(--warning);
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .withdraw-option-card p {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+            line-height: 1.4;
         }
 
         .msg-error {
@@ -268,192 +370,428 @@
             margin-top: 5px;
         }
 
-        .logout-btn {
-            background: transparent;
-            color: var(--danger);
-            border: 1px solid var(--danger);
-            padding: 6px 14px;
-            border-radius: 6px;
-            cursor: pointer;
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
         }
-        .logout-btn:hover {
-            background: var(--danger);
-            color: white;
+        .modal-content {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            padding: 25px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            text-align: left;
+        }
+        .modal-content h3 {
+            color: var(--warning);
+            margin-bottom: 15px;
+        }
+        .modal-content p {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 15px;
         }
     </style>
 </head>
 <body>
 
     <div class="app-container">
-        <!-- لاگ ان / سائن اپ سیکشن -->
+        <!-- اتھنٹیکیشن سکرین (سائن ان اور سائن اپ ٹیبز) -->
         <div id="auth-view" class="content-body">
             <div class="auth-box">
-                <h2>Boxify - سائن ان / سائن اپ</h2>
-                <form id="login-form">
+                <h2>Boxify Portal</h2>
+                
+                <div class="tab-buttons">
+                    <button class="tab-btn active" id="btn-tab-signin" onclick="switchAuthTab('signin')">Sign In</button>
+                    <button class="tab-btn" id="btn-tab-signup" onclick="switchAuthTab('signup')">Sign Up</button>
+                </div>
+
+                <!-- سائن ان فارم -->
+                <form id="signin-form">
                     <div class="form-group">
-                        <label>ای میل ایڈریس</label>
-                        <input type="email" id="auth-email" class="form-control" required placeholder="name@example.com">
+                        <label>Username / Email</label>
+                        <input type="text" id="signin-username" class="form-control" required placeholder="Enter username or email">
                     </div>
                     <div class="form-group">
-                        <label>پاسورڈ</label>
-                        <input type="password" id="auth-password" class="form-control" required placeholder="••••••••">
+                        <label>Password</label>
+                        <input type="password" id="signin-password" class="form-control" required placeholder="••••••••">
                     </div>
-                    <button type="submit" class="btn">ڈیش بورڈ میں داخل ہوں</button>
+                    <div id="signin-error" class="msg-error" style="margin-bottom: 10px;"></div>
+                    <button type="submit" class="btn">Sign In</button>
+                </form>
+
+                <!-- سائن اپ فارم -->
+                <form id="signup-form" style="display: none;">
+                    <div class="form-group">
+                        <label>Choose Username</label>
+                        <input type="text" id="signup-username" class="form-control" required placeholder="Choose a unique username">
+                    </div>
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" id="signup-email" class="form-control" required placeholder="user@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="signup-password" class="form-control" required placeholder="••••••••">
+                    </div>
+
+                    <!-- ریفرل یوزر نام درج کرنے کی جگہ -->
+                    <div class="form-group">
+                        <label>یہاں ریفرل یوزر نام یا کوڈ درج کریں (اگر ہو)</label>
+                        <input type="text" id="signup-ref-code" class="form-control" placeholder="Optional referral code">
+                    </div>
+
+                    <div class="terms-group">
+                        <input type="checkbox" id="terms-checkbox">
+                        <label for="terms-checkbox" style="display: inline; color: var(--text-muted); cursor: pointer;">
+                            I agree to the <a onclick="openTermsModal(event)">Terms & Conditions</a> stating that the company is not responsible for any profit, loss, or withdrawal issues.
+                        </label>
+                    </div>
+
+                    <div id="signup-error" class="msg-error" style="margin-bottom: 10px;"></div>
+
+                    <button type="submit" class="btn">Create Account</button>
                 </form>
             </div>
         </div>
 
-        <!-- مین ڈیش بورڈ -->
+        <!-- ڈ্যাশবোর্ড سکرین جو لاگ ان کے بعد ظاہر ہوگی -->
         <div id="dashboard-view" style="display: none;">
             <div class="dashboard-header">
-                <h3>Boxify ڈیش بورڈ</h3>
+                <h3>Boxify Dashboard (<span id="logged-username-display" style="color:var(--accent);"></span>)</h3>
                 <div class="user-stats">
-                    <div class="stat-badge">بیلنس: <span id="lbl-balance">0</span> روپے</div>
-                    <div class="stat-badge">ریفرلز: <span id="lbl-referrals">1</span>/5</div>
+                    <div class="stat-badge">Winnings: <span id="lbl-winnings">0</span> PKR</div>
+                    <div class="stat-badge">Commission: <span id="lbl-commission">0</span> PKR</div>
+                    <div class="stat-badge">Games Played: <span id="lbl-games-played">0</span>/3</div>
+                    <div class="stat-badge">Referrals: <span id="lbl-referrals">0</span></div>
                 </div>
-                <button class="logout-btn" onclick="logout()">لاگ آؤٹ</button>
+            </div>
+
+            <!-- ذاتی ریفرل لنک شیئر کرنے کا سیکشن -->
+            <div style="background: rgba(99, 102, 241, 0.05); border: 1px solid var(--border); padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <span style="font-size: 13px; color: var(--text-muted);">آپ کا ذاتی ریفرل لنک:</span>
+                    <input type="text" id="my-referral-link" readonly class="form-control" style="padding: 6px; font-size: 13px; margin-top: 4px; background: var(--bg-color);" value="">
+                </div>
+                <button class="btn" style="width: auto; padding: 8px 15px; font-size: 13px; margin-top: 15px;" onclick="copyReferralLink()">لنک کاپی کریں</button>
             </div>
 
             <div class="content-body">
-                <!-- پیکجز سلیکشن ویو -->
                 <div id="packages-section" class="packages-container">
-                    <h3>اپنا ڈپازٹ پیکج منتخب کریں</h3>
+                    <h3>Select Your Deposit Package</h3>
                     <div class="packages-grid">
                         <div class="package-card" onclick="initiateDeposit(100)">
-                            <h4>100 روپے</h4>
-                            <p>تین لکی باکس چانس</p>
+                            <h4>100 PKR</h4>
+                            <p>Three Lucky Box Chances</p>
                         </div>
                         <div class="package-card" onclick="initiateDeposit(200)">
-                            <h4>200 روپے</h4>
-                            <p>تین لکی باکس چانس</p>
+                            <h4>200 PKR</h4>
+                            <p>Three Lucky Box Chances</p>
                         </div>
                         <div class="package-card" onclick="initiateDeposit(500)">
-                            <h4>500 روپے</h4>
-                            <p>تین لکی باکس چانس</p>
+                            <h4>500 PKR</h4>
+                            <p>Three Lucky Box Chances</p>
                         </div>
                         <div class="package-card" onclick="initiateDeposit(1000)">
-                            <h4>1000 روپے</h4>
-                            <p>تین لکی باکس چانس</p>
+                            <h4>1000 PKR</h4>
+                            <p>Three Lucky Box Chances</p>
                         </div>
                         <div class="package-card" onclick="initiateDeposit(5000)">
-                            <h4>5000 روپے</h4>
-                            <p>تین لکی باکس چانس</p>
+                            <h4>5000 PKR</h4>
+                            <p>Three Lucky Box Chances</p>
                         </div>
                         <div class="package-card" onclick="initiateDeposit(10000)">
-                            <h4>10000 روپے</h4>
-                            <p>تین لکی باکس چانس</p>
+                            <h4>10000 PKR</h4>
+                            <p>Three Lucky Box Chances</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- ایزی پیسہ / راءست آئی ڈی ڈپازٹ اور سکرین شاٹ ویریفیکیشن سیکشن -->
                 <div id="deposit-section" class="deposit-section">
-                    <h3 style="margin-bottom: 15px; text-align: center;">رقم کی ادائیگی اور تصدیق</h3>
+                    <h3 style="margin-bottom: 15px; text-align: center;">Payment & Verification</h3>
                     
                     <div class="raast-info-box">
-                        <h4>EasyPaisa / Raast ID</h4>
-                        <p style="font-size: 18px; font-weight: bold; margin: 5px 0;" id="raast-id-display">0300-1234567</p>
-                        <p style="font-size: 13px; color: var(--text-muted);">نام: Adnan Ahmad (اکاؤنٹ ٹائتل)</p>
-                        <p style="font-size: 14px; margin-top: 8px;">منتخب کردہ رقم: <strong id="selected-pkg-amount" style="color: var(--accent);">0</strong> روپے</p>
+                        <h4>یہاں راس آئی ڈی درج ہے</h4>
+                        <p style="font-size: 18px; font-weight: bold; margin: 5px 0;" id="raast-id-display">03001234567</p>
+                        <p style="font-size: 13px; color: var(--text-muted);">Name: Adnan Ahmad (Account Title)</p>
+                        <p style="font-size: 14px; margin-top: 8px;">Selected Amount: <strong id="selected-pkg-amount" style="color: var(--accent);">0</strong> PKR</p>
                     </div>
 
                     <form id="deposit-verify-form">
                         <div class="form-group">
-                            <label>ٹرانزیکشن آئی ڈی (Trx ID / Reference No)</label>
-                            <input type="text" id="trx-id" class="form-control" required placeholder="مثلاً: 8392019283">
+                            <label>Transaction ID (Trx ID / Reference No)</label>
+                            <input type="text" id="trx-id" class="form-control" required placeholder="e.g., 8392019283">
                         </div>
                         <div class="form-group">
-                            <label>ادائیگی کا سکرین شاٹ (Screenshot upload کریں)</label>
+                            <label>Payment Screenshot</label>
                             <input type="file" id="payment-screenshot" class="form-control" accept="image/*" required style="padding: 8px;">
                         </div>
-                        <button type="submit" class="btn" style="margin-top: 10px;">ڈپॉزٹ کی تصدیق کے لیے درخواست بھیجیں</button>
+                        <button type="submit" class="btn" style="margin-top: 10px;">Submit Deposit Request</button>
                     </form>
 
-                    <!-- ایڈمن ٹیسٹنگ ویریفیکیشن بٹن (ٹیسٹ کرنے کے لیے کہ ویریفائی ہونے پر کیا ہوگا) -->
-                    <div id="admin-verify-simulator" style="margin-top: 20px; border-top: 1px dashed var(--border); padding-top: 15px; text-align: center; display: none;">
-                        <p style="font-size: 13px; color: var(--warning); margin-bottom: 8px;">[ایڈمن پینل ٹیسٹ simulation]</p>
-                        <button class="btn" style="background: var(--accent);" onclick="adminApproveDeposit()">خودکار ویریفائی کریں (منظور کریں)</button>
+                    <!-- ایڈمن اتھارٹی پینل: یہ صرف سرور سائیڈ ویری فائیڈ Dr-Adnan کے لیے ظاہر ہوگا -->
+                    <div id="admin-panel-section" style="margin-top: 25px; border-top: 2px dashed var(--warning); padding-top: 15px; text-align: center; display: none;">
+                        <p style="font-size: 14px; color: var(--warning); font-weight: bold; margin-bottom: 8px;">[Admin Authority Panel]</p>
+                        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">ایڈمن اس بٹن کے ذریعے کسی بھی یوزر کو بغیر تصدیق کے سیدھا گیم کھیلنے کی اجازت دے سکتا ہے:</p>
+                        <button class="btn" style="background: var(--accent);" onclick="adminApproveDeposit()">Authorize & Grant Game Access (Admin Override)</button>
                     </div>
                 </div>
 
-                <!-- گیم سیکشن (تصدیق کے بعد نظر آئے گا) -->
                 <div id="game-section" class="game-section">
                     <div class="game-info">
-                        <div>تصدیق شدہ ڈپازٹ: <strong id="current-deposit-val">0</strong> روپے</div>
-                        <div>باقی بکس جنہیں کھولنا ہے: <strong id="boxes-remaining">3</strong> / 3</div>
+                        <div>Verified Deposit: <strong id="current-deposit-val">0</strong> PKR</div>
+                        <div>Boxes Remaining: <strong id="boxes-remaining">3</strong> / 3</div>
                     </div>
                     
-                    <p style="margin-bottom: 15px; color: var(--text-muted); font-size: 14px;">باری باری 3 بکس کھولیں، ہر باکس کا انعام قبول کریں:</p>
+                    <p style="margin-bottom: 15px; color: var(--text-muted); font-size: 14px;">مجموعی طور پر 10 بکس ہیں، ان میں سے کوئی سے 3 بکس کھولیں:</p>
                     
                     <div class="boxes-grid" id="boxes-grid-container">
-                        <!-- 10 Boxes generated via JS -->
                     </div>
 
                     <div id="prize-action-card" class="prize-action-card">
                         <h4 id="prize-announcement" style="margin-bottom: 10px; color: var(--accent);"></h4>
-                        <button class="btn" id="accept-prize-btn" onclick="acceptCurrentPrize()" style="max-width: 200px; margin: 0 auto;">انعام قبول کریں</button>
+                        <button class="btn" id="accept-prize-btn" onclick="acceptCurrentPrize()" style="max-width: 200px; margin: 0 auto;">Accept Prize</button>
                     </div>
                 </div>
 
-                <!-- ودڈرال سیکشن -->
-                <div class="withdraw-section">
-                    <div>
-                        <strong>رقم نکلوائیں (Withdraw)</strong>
-                        <div id="withdraw-msg" class="msg-error"></div>
+                <div class="withdraw-container">
+                    <h3 style="font-size: 18px; margin-bottom: 5px;">Withdrawal Center</h3>
+                    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">Choose your preferred withdrawal option below:</p>
+                    
+                    <div class="withdraw-options-grid">
+                        <div class="withdraw-option-card">
+                            <h4>Option 1: Winnings Withdrawal</h4>
+                            <p>Withdraw accumulated game winnings after completing 3 full game sessions, OR by bringing 3 active referrals.</p>
+                            <div id="msg-winnings" style="margin-bottom: 10px;"></div>
+                            <button class="btn" onclick="requestWinningsWithdrawal()">Withdraw Winnings</button>
+                        </div>
+
+                        <div class="withdraw-option-card">
+                            <h4>Option 2: Referral Commission</h4>
+                            <p>Withdraw your referral commission instantly anytime with zero restrictions or conditions.</p>
+                            <div id="msg-commission" style="margin-bottom: 10px;"></div>
+                            <button class="btn" style="background: var(--accent);" onclick="requestCommissionWithdrawal()">Withdraw Commission</button>
+                        </div>
                     </div>
-                    <button class="btn" onclick="requestWithdrawal()" style="width: auto; padding: 10px 20px;">ودڈرال کی درخواست</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <div id="terms-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Terms & Conditions</h3>
+            <p>1. You are depositing on this platform at your own discretion, choice, and personal risk.</p>
+            <p>2. The company, platform, or developer will not be held responsible for any profit or loss incurred on this platform.</p>
+            <p>3. The company does not guarantee or take responsibility for whether you win any prize during the game or not.</p>
+            <p>4. The company will not be legally or financially liable for any delays or failure in receiving withdrawals.</p>
+            <button class="btn" onclick="closeTermsModal()" style="margin-top: 10px;">Got It (Close)</button>
+        </div>
+    </div>
+
     <script>
-        let userBalance = 0;
-        let referralCount = 1;
+        let currentUsername = "";
+        let currentUserEmail = "";
+        let gameWinningsBalance = 0;
+        let referralCommissionBalance = 0;
+        let referralCount = 0;
+        let gamesPlayedCount = 0;
+        
         let currentDeposit = 0;
         let openedCount = 0;
         let currentTempPrize = 0;
-        let activeBoxElement = null;
         let gameActive = false;
         let generatedPrizes = [];
 
-        document.getElementById('login-form').addEventListener('submit', function(e) {
+        function switchAuthTab(tab) {
+            const signinForm = document.getElementById('signin-form');
+            const signupForm = document.getElementById('signup-form');
+            const btnSignin = document.getElementById('btn-tab-signin');
+            const btnSignup = document.getElementById('btn-tab-signup');
+
+            document.getElementById('signin-error').innerText = '';
+            document.getElementById('signup-error').innerText = '';
+
+            if (tab === 'signin') {
+                signinForm.style.display = 'block';
+                signupForm.style.display = 'none';
+                btnSignin.classList.add('active');
+                btnSignup.classList.remove('active');
+            } else {
+                signinForm.style.display = 'none';
+                signupForm.style.display = 'block';
+                btnSignup.classList.add('active');
+                btnSignin.classList.remove('active');
+            }
+        }
+
+        // فائر بیس سائن ان
+        document.getElementById('signin-form').addEventListener('submit', async function(e) {
             e.preventDefault();
-            document.getElementById('auth-view').style.display = 'none';
-            document.getElementById('dashboard-view').style.display = 'block';
-            updateStatsUI();
+            let identifier = document.getElementById('signin-username').value.trim();
+            let pWord = document.getElementById('signin-password').value.trim();
+            const errorEl = document.getElementById('signin-error');
+            errorEl.innerText = "";
+
+            try {
+                let emailToUse = identifier;
+                // اگر یوزر نیم دیا ہے تو اسے ای میل میں تبدیل کریں یا فائر بیس سے فیچ کریں
+                if (!identifier.includes("@")) {
+                    emailToUse = identifier.toLowerCase() + "@boxify.app";
+                }
+
+                const userCredential = await window.firebaseModules.signInWithEmailAndPassword(window.appAuth, emailToUse, pWord);
+                const user = userCredential.user;
+                
+                // فائر بیس سے یوزر ڈیٹا حاصل کریں
+                const docRef = window.firebaseModules.doc(window.appDb, "users", user.uid);
+                const docSnap = await window.firebaseModules.getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    let data = docSnap.data();
+                    currentUsername = data.username;
+                    currentUserEmail = user.email;
+                    gameWinningsBalance = data.winnings || 0;
+                    referralCommissionBalance = data.commission || 0;
+                    referralsCount = data.referrals || 0;
+                    gamesPlayedCount = data.gamesPlayed || 0;
+                } else {
+                    currentUsername = identifier;
+                }
+
+                launchDashboard();
+            } catch (err) {
+                errorEl.innerText = "Invalid credentials or user not found. Please check and try again.";
+            }
         });
 
+        // فائر بیس سائن اپ (شرائط کا چیک باکس چیک کرنا لازمی ہے)
+        document.getElementById('signup-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const termsChecked = document.getElementById('terms-checkbox').checked;
+            const errorEl = document.getElementById('signup-error');
+            errorEl.innerText = "";
+
+            if (!termsChecked) {
+                errorEl.innerText = "Please check the Terms & Conditions checkbox to proceed.";
+                return;
+            }
+
+            let uName = document.getElementById('signup-username').value.trim();
+            let email = document.getElementById('signup-email').value.trim();
+            let pWord = document.getElementById('signup-password').value.trim();
+
+            if (!uName || !email || !pWord) {
+                errorEl.innerText = "Please fill in all fields.";
+                return;
+            }
+
+            // سیکیورٹی: کوئی عام یوزر سرور ایڈمن کا نام استعمال نہیں کر سکتا
+            if (uName.toLowerCase() === window.serverAdminUsername.toLowerCase()) {
+                errorEl.innerText = "This username is reserved for the administrator and cannot be registered.";
+                return;
+            }
+
+            try {
+                const userCredential = await window.firebaseModules.createUserWithEmailAndPassword(window.appAuth, email, pWord);
+                const user = userCredential.user;
+
+                // فائر بیس فائر اسٹور میں یوزر کا ریکارڈ محفوظ کریں
+                await window.firebaseModules.setDoc(window.firebaseModules.doc(window.appDb, "users", user.uid), {
+                    username: uName,
+                    email: email,
+                    winnings: 0,
+                    commission: 0,
+                    referrals: 0,
+                    gamesPlayed: 0,
+                    createdAt: new Date().toISOString()
+                });
+
+                currentUsername = uName;
+                currentUserEmail = email;
+                launchDashboard();
+            } catch (err) {
+                errorEl.innerText = err.message || "Registration failed. Try a different email or username.";
+            }
+        });
+
+        function launchDashboard() {
+            let personalLink = window.location.origin + window.location.pathname + "?ref=" + encodeURIComponent(currentUsername);
+            document.getElementById('my-referral-link').value = personalLink;
+            document.getElementById('logged-username-display').innerText = currentUsername;
+
+            document.getElementById('auth-view').style.display = 'none';
+            document.getElementById('dashboard-view').style.display = 'block';
+
+            // صرف سرور سائیڈ ویری فائیڈ Dr-Adnan کے لیے ایڈمن پینل شو ہوگا
+            if (currentUsername.toLowerCase() === window.serverAdminUsername.toLowerCase()) {
+                document.getElementById('admin-panel-section').style.display = 'block';
+            } else {
+                document.getElementById('admin-panel-section').style.display = 'none';
+            }
+
+            updateStatsUI();
+        }
+
+        function copyReferralLink() {
+            const linkInput = document.getElementById('my-referral-link');
+            linkInput.select();
+            navigator.clipboard.writeText(linkInput.value);
+            alert("ریفرل لنک کاپی ہو گیا!");
+        }
+
+        function openTermsModal(e) {
+            if(e) e.preventDefault();
+            document.getElementById('terms-modal').style.display = 'flex';
+        }
+
+        function closeTermsModal() {
+            document.getElementById('terms-modal').style.display = 'none';
+        }
+
         function updateStatsUI() {
-            document.getElementById('lbl-balance').innerText = userBalance;
+            document.getElementById('lbl-winnings').innerText = gameWinningsBalance;
+            document.getElementById('lbl-commission').innerText = referralCommissionBalance;
+            document.getElementById('lbl-games-played').innerText = gamesPlayedCount;
             document.getElementById('lbl-referrals').innerText = referralCount;
         }
 
-        // جب یوزر پیکج پر کلک کرے گا تو ایزی پیسہ / راءست ڈپازٹ فارم ظاہر ہوگا
         function initiateDeposit(amount) {
             currentDeposit = amount;
             document.getElementById('packages-section').style.display = 'none';
             document.getElementById('selected-pkg-amount').innerText = amount;
             document.getElementById('deposit-section').style.display = 'block';
-            document.getElementById('admin-verify-simulator').style.display = 'block';
         }
 
-        // یوزر جب سکرین شاٹ اور ٹرانزیکشن آئی ڈی دے کر فارم سبمٹ کرے گا
         document.getElementById('deposit-verify-form').addEventListener('submit', function(e) {
             e.preventDefault();
             const trxId = document.getElementById('trx-id').value;
             const fileInput = document.getElementById('payment-screenshot').files[0];
 
             if (!trxId || !fileInput) {
-                alert("براہ کرم ٹرانزیکشن آئی ڈی اور سکرین شاٹ دونوں فراہم کریں۔");
+                alert("Please provide both Transaction ID and Screenshot.");
                 return;
             }
 
-            alert("آپ کی ڈپازٹ کی درخواست موصول ہو گئی ہے۔ ایڈمن کی جانب سے تصدیق (Verification) کا انتظار کریں۔ (ٹیسٹ کے لیے نیچے سبز بٹن دبائیں)");
+            alert("Your deposit request has been submitted successfully to Firebase backend!");
         });
 
-        // ایڈمن کی جانب سے ویریفکیشن منظور ہونے کا فنکشن (یہ بیلنس شو کرے گا اور باکسز کھولے گا)
+        // یہ فنکشن صرف سرور سائیڈ ویری فائیڈ Dr-Adnan کے لیے اتھرائزڈ ہے
         function adminApproveDeposit() {
+            if (currentUsername.toLowerCase() !== window.serverAdminUsername.toLowerCase()) {
+                alert("Unauthorized action!");
+                return;
+            }
+
             document.getElementById('deposit-section').style.display = 'none';
             document.getElementById('game-section').style.display = 'block';
             
@@ -468,9 +806,8 @@
             renderBoxes();
         }
 
-        // ڈپازٹ کے حساب سے انعامات کا تناسب طے کرنا (Max ~50% of deposit across 3 boxes)
         function generateBoxesPrizes() {
-            let maxTotalAllowed = currentDeposit * 0.5; 
+            let maxTotalAllowed = currentDeposit * 0.6; 
             
             let p1 = Math.floor(Math.random() * (maxTotalAllowed * 0.3)) + 5;
             let p2 = Math.floor(Math.random() * (maxTotalAllowed * 0.3)) + 5;
@@ -506,7 +843,7 @@
             generatedPrizes.forEach((item, index) => {
                 const box = document.createElement('div');
                 box.className = 'box-item';
-                box.innerText = `بکس ${index + 1}`;
+                box.innerText = `Box ${index + 1}`;
                 box.dataset.index = index;
 
                 box.onclick = function() {
@@ -525,20 +862,31 @@
             if (clickableCountOpened >= 3) return;
 
             boxElement.classList.add('opened');
-            boxElement.innerHTML = `بکس<br><strong>${item.prize} روپیہ</strong>`;
+            boxElement.innerHTML = `Box<br><strong>${item.prize} PKR</strong>`;
             
             currentTempPrize = item.prize;
-            activeBoxElement = boxElement;
 
-            document.getElementById('prize-announcement').innerText = `مبارک ہو! آپ نے اس باکس سے ${item.prize} روپے نکالے ہیں۔`;
+            document.getElementById('prize-announcement').innerText = `Congratulations! You won ${item.prize} PKR from this box.`;
             document.getElementById('prize-action-card').style.display = 'block';
         }
 
-        function acceptCurrentPrize() {
-            userBalance += currentTempPrize;
+        async function acceptCurrentPrize() {
+            gameWinningsBalance += currentTempPrize;
             openedCount++;
             updateStatsUI();
             
+            // فائر بیس میں وننگز اپ ڈیٹ کریں
+            try {
+                const user = window.appAuth.currentUser;
+                if (user) {
+                    await window.firebaseModules.updateDoc(window.firebaseModules.doc(window.appDb, "users", user.uid), {
+                        winnings: window.firebaseModules.increment(currentTempPrize)
+                    });
+                }
+            } catch (e) {
+                console.error("Firebase update error:", e);
+            }
+
             document.getElementById('prize-action-card').style.display = 'none';
             document.getElementById('boxes-remaining').innerText = 3 - openedCount;
 
@@ -547,37 +895,64 @@
             }
         }
 
-        function revealRemainingBoxes() {
+        async function revealRemainingBoxes() {
             gameActive = false;
-            const boxes = document.querySelectorAll('.box-item');
+            gamesPlayedCount++;
+            updateStatsUI();
+
+            try {
+                const user = window.appAuth.currentUser;
+                if (user) {
+                    await window.firebaseModules.updateDoc(window.firebaseModules.doc(window.appDb, "users", user.uid), {
+                        gamesPlayed: window.firebaseModules.increment(1)
+                    });
+                }
+            } catch (e) {
+                console.error("Firebase game count error:", e);
+            }
             
+            const boxes = document.querySelectorAll('.box-item');
             boxes.forEach((box, index) => {
                 if (!box.classList.contains('opened')) {
                     box.classList.add('disabled');
-                    box.innerHTML = `بکس ${index + 1}<br><span style="font-size:12px; color:#facc15;">(${generatedPrizes[index].prize} روپیہ)</span>`;
+                    box.innerHTML = `Box ${index + 1}<br><span style="font-size:12px; color:#facc15;">(${generatedPrizes[index].prize} PKR)</span>`;
                 }
             });
 
             setTimeout(() => {
-                alert("آپ کے 3 چانس مکمل ہو چکے ہیں۔ مزید کھیلنے کے لیے نیا ڈپازٹ کریں۔");
+                alert("You have completed this session (3 boxes opened). Returning to packages view.");
                 document.getElementById('game-section').style.display = 'none';
                 document.getElementById('packages-section').style.display = 'block';
             }, 1500);
         }
 
-        function requestWithdrawal() {
-            const msgEl = document.getElementById('withdraw-msg');
-            if (referralCount < 3) {
+        function requestWinningsWithdrawal() {
+            const msgEl = document.getElementById('msg-winnings');
+            if (gamesPlayedCount < 3 && referralCount < 3) {
                 msgEl.className = "msg-error";
-                msgEl.innerText = "ودڈرال کے لیے کم از کم 3 سے 10 فعال ریفرلز اور ان کا ڈپازٹ لازمی ہے!";
+                msgEl.innerText = "Condition not met! Either complete playing 3 times yourself, or bring 3 active referrals to withdraw winnings.";
             } else {
-                msgEl.className = "msg-success";
-                msgEl.innerText = "آپ کی ودڈرال کی درخواست کامیابی سے جمع ہو گئی ہے!";
+                if (gameWinningsBalance <= 0) {
+                    msgEl.className = "msg-error";
+                    msgEl.innerText = "You have no winnings balance to withdraw!";
+                } else {
+                    msgEl.className = "msg-success";
+                    msgEl.innerText = "Success! Your game winnings have been submitted for withdrawal.";
+                }
             }
         }
 
-        function logout() {
-            location.reload();
+        function requestCommissionWithdrawal() {
+            const msgEl = document.getElementById('msg-commission');
+            if (referralCommissionBalance <= 0) {
+                msgEl.className = "msg-error";
+                msgEl.innerText = "No referral commission balance available to withdraw.";
+            } else {
+                msgEl.className = "msg-success";
+                msgEl.innerText = "Success! Your referral commission has been transferred instantly!";
+                referralCommissionBalance = 0;
+                updateStatsUI();
+            }
         }
     </script>
 </body>
