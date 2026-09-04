@@ -479,10 +479,10 @@
             <!-- ذاتی ریفرل لنک شیئر کرنے کا سیکشن -->
             <div style="background: rgba(99, 102, 241, 0.05); border: 1px solid var(--border); padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
                 <div>
-                    <span style="font-size: 13px; color: var(--text-main);">آپ کا ذاتی ریفرل لنک:</span>
+                    <span style="font-size: 13px; color: var(--text-main);">:</span>
                     <input type="text" id="my-referral-link" readonly class="form-control" style="padding: 6px; font-size: 13px; margin-top: 4px; background: var(--bg-color);" value="">
                 </div>
-                <button class="btn" style="width: auto; padding: 8px 15px; font-size: 13px; margin-top: 15px;" onclick="copyReferralLink()">لنک کاپی کریں</button>
+                <button class="btn" style="width: auto; padding: 8px 15px; font-size: 13px; margin-top: 15px;" onclick="copyReferralLink()">copy</button>
             </div>
             <div class="content-body">
                 <div id="packages-section" class="packages-container">
@@ -517,11 +517,11 @@
                 <div id="deposit-section" class="deposit-section">
                     <h3 style="margin-bottom: 15px; text-align: center;">Payment & Verification</h3>
                     <div class="raast-info-box">
-                        <h4>یہاں راس آئی ڈی درج ہے</h4>
-                        <p style="font-size: 18px; font-weight: bold; margin: 5px 0;" id="raast-id-display">03001234567</p>
-                        <p style="font-size: 13px; color: var(--text-main);">Name: Adnan Ahmad (Account Title)</p>
-                        <p style="font-size: 14px; margin-top: 8px;">Selected Amount: <strong id="selected-pkg-amount" style="color: var(--accent);">0</strong> PKR</p>
-                    </div>
+                                               <h4 style="color: var(--text-main); margin-bottom: 5px;">EasyPaisa Deposit</h4>
+                        <p style="font-size: 14px; color: var(--text-main); margin: 3px 0;">Account Name: <b>EasyPaisa</b></p>
+                        <p style="font-size: 14px; color: var(--text-main); margin: 3px 0;">Account Holder Name: <b>Adnan Ahmad</b></p>
+                        <p style="font-size: 14px; color: var(--text-main); margin: 3px 0;">Account Number: <b>03074591741</b></p>
+
                     <form id="deposit-verify-form">
                         <div class="form-group">
                             <label>Transaction ID (Trx ID / Reference No)</label>
@@ -734,7 +734,7 @@
         });
 
         function launchDashboard() {
-            let personalLink = window.location.origin + window.location.pathname + "?ref=" + encodeURIComponent(currentUsername);
+            let personalLink = window.location.origin + window.location.pathname + "?ref=7824";
             document.getElementById('my-referral-link').value = personalLink;
             document.getElementById('logged-username-display').innerText = currentUsername;
             document.getElementById('auth-view').style.display = 'none';
