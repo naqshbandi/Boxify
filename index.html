@@ -1,968 +1,286 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boxify - Professional Reward Dashboard</title>
-    <!-- Firebase SDK (Modular v10) -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, updateDoc, increment, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    <title>Boxify Portal</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #0b0f19;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .card-bg {
+            background-color: #131b2e;
+        }
+        .input-bg {
+            background-color: #1a233a;
+            border: 1px solid #2a3756;
+        }
+        .input-bg:focus {
+            border-color: #6366f1;
+            outline: none;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
 
-        // Your Web app's Firebase configuration
+    <!-- Main Container -->
+    <div id="app-container" class="w-full max-w-md card-bg rounded-2xl shadow-2xl p-6 md:p-8 relative overflow-hidden">
+        
+        <!-- Portal Header -->
+        <div class="text-center mb-6">
+            <h1 class="text-2xl font-bold tracking-wide text-white">Boxify Portal</h1>
+            <p class="text-xs text-gray-400 mt-1">Secure Earning & Management System</p>
+        </div>
+
+        <!-- Auth Toggle Tabs -->
+        <div class="flex bg-[#1a233a] p-1 rounded-xl mb-6">
+            <button id="tab-signin" onclick="switchTab('signin')" class="flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all text-white bg-[#6366f1] shadow-md">Sign In</button>
+            <button id="tab-signup" onclick="switchTab('signup')" class="flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all text-gray-400 hover:text-white">Sign Up</button>
+        </div>
+
+        <!-- ================= SIGN IN FORM ================= -->
+        <form id="form-signin" onsubmit="handleSignIn(event)" class="space-y-4">
+            <div>
+                <label class="block text-xs font-medium text-gray-300 mb-1.5">Username / Email</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fa-solid fa-user"></i></span>
+                    <input type="text" id="signin-email" required placeholder="Enter username or email" class="w-full pl-10 pr-4 py-3 text-sm rounded-xl input-bg text-white placeholder-gray-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-300 mb-1.5">Password</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fa-solid fa-lock"></i></span>
+                    <input type="password" id="signin-password" required placeholder="••••••••" class="w-full pl-10 pr-10 py-3 text-sm rounded-xl input-bg text-white placeholder-gray-500">
+                    <button type="button" onclick="togglePassword('signin-password', this)" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-white">
+                        <i class="fa-solid fa-eye-slash"></i>
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" class="w-full py-3 mt-2 btn-primary text-white font-semibold rounded-xl shadow-lg text-sm tracking-wide">
+                Sign In
+            </button>
+        </form>
+
+        <!-- ================= SIGN UP FORM ================= -->
+        <form id="form-signup" onsubmit="handleSignUp(event)" class="space-y-4 hidden">
+            <div>
+                <label class="block text-xs font-medium text-gray-300 mb-1.5">Full Name</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fa-solid id-card"></i></span>
+                    <input type="text" id="signup-name" required placeholder="Enter your full name" class="w-full pl-10 pr-4 py-3 text-sm rounded-xl input-bg text-white placeholder-gray-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-300 mb-1.5">Email Address</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fa-solid fa-envelope"></i></span>
+                    <input type="email" id="signup-email" required placeholder="name@example.com" class="w-full pl-10 pr-4 py-3 text-sm rounded-xl input-bg text-white placeholder-gray-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-300 mb-1.5">Password</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fa-solid fa-lock"></i></span>
+                    <input type="password" id="signup-password" required placeholder="••••••••" class="w-full pl-10 pr-10 py-3 text-sm rounded-xl input-bg text-white placeholder-gray-500">
+                    <button type="button" onclick="togglePassword('signup-password', this)" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-white">
+                        <i class="fa-solid fa-eye-slash"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-300 mb-1.5">Confirm Password</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fa-solid fa-lock"></i></span>
+                    <input type="password" id="signup-confirm-password" required placeholder="••••••••" class="w-full pl-10 pr-10 py-3 text-sm rounded-xl input-bg text-white placeholder-gray-500">
+                    <button type="button" onclick="togglePassword('signup-confirm-password', this)" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-white">
+                        <i class="fa-solid fa-eye-slash"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Terms & Conditions Checkbox -->
+            <div class="flex items-start space-x-2 pt-1">
+                <input type="checkbox" id="terms-check" required class="mt-1 rounded input-bg text-indigo-600 focus:ring-0">
+                <label for="terms-check" class="text-xs text-gray-400 leading-relaxed">
+                    I agree to the <span class="text-indigo-400 underline cursor-pointer" onclick="showTermsModal()">Terms & Conditions</span>. I understand the company is not responsible for external financial risks or market movements.
+                </label>
+            </div>
+
+            <button type="submit" class="w-full py-3 mt-2 btn-primary text-white font-semibold rounded-xl shadow-lg text-sm tracking-wide">
+                Create Account
+            </button>
+        </form>
+
+        <!-- Notification Toast Area -->
+        <div id="toast" class="hidden mt-4 p-3 rounded-xl text-xs text-center font-medium transition-all"></div>
+    </div>
+
+    <!-- Firebase SDK Imports -->
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // ==========================================
+        // REPLACE WITH YOUR FIREBASE CONFIGURATION
+        // ==========================================
         const firebaseConfig = {
-            apiKey: "AIzaSyAZTA87zhyJRHazKVDEGHE3wLR-2nt30",
-            authDomain: "boxifyapp-6f63f.firebaseapp.com",
-            projectId: "boxifyapp-6f63f",
-            storageBucket: "boxifyapp-6f63f.appspot.com",
-            messagingSenderId: "845814985925",
-            appId: "1:845814985925:web:b7531e2feed7Db4ea2cac"
+            apiKey: "YOUR_API_KEY_HERE",
+            authDomain: "YOUR_AUTH_DOMAIN_HERE",
+            projectId: "YOUR_PROJECT_ID_HERE",
+            storageBucket: "YOUR_STORAGE_BUCKET_HERE",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID_HERE",
+            appId: "YOUR_APP_ID_HERE"
         };
 
+        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // سرور سائیڈ کنفیگریشن (ایڈمن یوزر نیم فرنٹ اینڈ سے مکمل خفیہ)
-        const SERVER_ADMIN_USERNAME = "Dr-Adnan";
-
-        window.appAuth = auth;
-        window.firebaseModules = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, doc, setDoc, getDoc, updateDoc, increment, collection, query, where, getDocs };
-
-        window.serverAdminUsername = SERVER_ADMIN_USERNAME;
-        window.firebaseModules = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, doc, setDoc, getDoc, updateDoc, increment };
+        // Expose Firebase utilities globally for inline handlers if needed
+        window.firebaseAuth = auth;
+        window.firebaseDb = db;
+        window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+        window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
+        window.doc = doc;
+        window.setDoc = setDoc;
+        window.getDoc = getDoc;
     </script>
-    <style>
-        :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --primary: #6366f1;
-            --primary-hover: #4f46e5;
-            --accent: #10b981;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --text-main: #ffffff;
-            --text-muted: #ffffff;
-            --border: #334155;
-        }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .app-container {
-            width: 100%;
-            max-width: 900px;
-            background: var(--card-bg);
-            border-radius: 16px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
-            border: 1px solid var(--border);
-        }
-
-        .dashboard-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px 30px;
-            background: rgba(15, 23, 42, 0.6);
-            border-bottom: 1px solid var(--border);
-        }
-
-        .user-stats {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-
-        .stat-badge {
-            background: rgba(99, 102, 241, 0.1);
-            padding: 8px 14px;
-            border-radius: 8px;
-            border: 1px solid rgba(99, 102, 241, 0.3);
-            font-size: 13px;
-        }
-
-        .stat-badge span {
-            font-weight: bold;
-            color: var(--accent);
-        }
-
-        .content-body {
-            padding: 30px;
-        }
-
-        .auth-box {
-            max-width: 420px;
-            margin: 0 auto;
-            text-align: center;
-        }
-
-        .auth-box h2 {
-            margin-bottom: 20px;
-            color: var(--text-main);
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-            text-align: left;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 14px;
-            color: var(--text-main);
-            margin-bottom: 5px;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 12px;
-            background: var(--bg-color);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text-main);
-            font-size: 16px;
-        }
-
-        .terms-group {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            text-align: left;
-            margin-bottom: 10px;
-            font-size: 13px;
-            color: var(--text-main);
-        }
-
-        .terms-group input[type="checkbox"] {
-            margin-top: 3px;
-            transform: scale(1.2);
-            cursor: pointer;
-        }
-
-        .terms-group a {
-            color: var(--primary);
-            text-decoration: underline;
-            cursor: pointer;
-        }
-
-        .btn {
-            width: 100%;
-            padding: 12px;
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .btn:hover {
-            background: var(--primary-hover);
-        }
-
-        .tab-buttons {
-            display: flex;
-            margin-bottom: 20px;
-            background: var(--bg-color);
-            border-radius: 8px;
-            padding: 4px;
-            border: 1px solid var(--border);
-        }
-
-        .tab-btn {
-            flex: 1;
-            padding: 10px;
-            background: transparent;
-            border: none;
-            color: var(--text-muted);
-            font-weight: bold;
-            cursor: pointer;
-            border-radius: 6px;
-            transition: all 0.2s;
-        }
-
-        .tab-btn.active {
-            background: var(--primary);
-            color: white;
-        }
-
-        .packages-container h3 {
-            margin-bottom: 20px;
-            text-align: center;
-            font-size: 22px;
-            color: var(--text-main);
-        }
-
-        .packages-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-        }
-
-        .package-card {
-            background: var(--bg-color);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .package-card:hover {
-            border-color: var(--primary);
-            transform: translateY(-3px);
-            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.2);
-        }
-
-        .package-card h4 {
-            font-size: 20px;
-            color: var(--accent);
-            margin-bottom: 10px;
-        }
-
-        .deposit-section {
-            display: none;
-            background: var(--bg-color);
-            border: 1px solid var(--border);
-            padding: 25px;
-            border-radius: 12px;
-            max-width: 500px;
-            margin: 0 auto;
-        }
-
-        .raast-info-box {
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px dashed var(--accent);
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .raast-info-box h4 {
-            color: var(--accent);
-            margin-bottom: 5px;
-        }
-
-        .game-section {
-            display: none;
-        }
-
-        .game-info {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-            background: var(--bg-color);
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-        }
-
-        .boxes-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .box-item {
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-            height: 100px;
-            border-radius: 10px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            font-weight: bold;
-            transition: transform 0.2s;
-            border: 2px solid transparent;
-            text-align: center;
-            padding: 5px;
-            color: #ffffff;
-        }
-
-        .box-item:hover:not(.opened):not(.disabled) {
-            transform: scale(1.05);
-            border-color: #93c5fd;
-        }
-
-        .box-item.opened {
-            background: #065f46;
-            cursor: default;
-        }
-
-        .box-item.disabled {
-            background: #475569;
-            opacity: 0.7;
-            cursor: not-allowed;
-        }
-
-        .prize-action-card {
-            background: var(--bg-color);
-            border: 1px solid var(--border);
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-            margin-top: 20px;
-            display: none;
-        }
-
-        .withdraw-container {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid var(--border);
-        }
-
-        .withdraw-options-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-top: 15px;
-        }
-
-        .withdraw-option-card {
-            background: var(--bg-color);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 20px;
-            text-align: center;
-        }
-
-        .withdraw-option-card h4 {
-            color: var(--warning);
-            margin-bottom: 10px;
-            font-size: 16px;
-        }
-
-        .withdraw-option-card p {
-            font-size: 13px;
-            color: var(--text-main);
-            margin-bottom: 15px;
-            line-height: 1.4;
-        }
-
-        .msg-error {
-            color: var(--danger);
-            font-size: 14px;
-            margin-top: 5px;
-        }
-
-        .msg-success {
-            color: var(--accent);
-            font-size: 14px;
-            margin-top: 5px;
-        }
-
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.7);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-
-        .modal-content {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            padding: 25px;
-            border-radius: 12px;
-            max-width: 500px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-            text-align: left;
-        }
-
-        .modal-content h3 {
-            color: var(--warning);
-            margin-bottom: 15px;
-        }
-
-        .modal-content p {
-            font-size: 14px;
-            color: var(--text-main);
-            line-height: 1.6;
-            margin-bottom: 15px;
-        }
-
-    .modal-content p {
-        font-size: 14px;
-        color: var(--text-muted);
-        line-height: 1.6;
-        margin-bottom: 15px;
-    }
-
-    @media (max-width: 480px) {
-        body {
-            padding: 5px;
-        }
-        .app-container {
-            border-radius: 0;
-            border: none;
-        }
-        .packages-grid, .withdraw-options-grid, .boxes-grid {
-            grid-template-columns: 1fr !important;
-        }
-    }
-
-        
-    </style>
-</head>
-<body>
-    <div class="app-container">
-        <!-- اتھنٹیکیشن سکرین (سائن ان اور سائن اپ ٹیبز) -->
-        <div id="auth-view" class="content-body">
-            <div class="auth-box">
-                <h2>Boxify Portal</h2>
-                <div class="tab-buttons">
-                    <button class="tab-btn active" id="btn-tab-signin" onclick="switchAuthTab('signin')">Sign In</button>
-                    <button class="tab-btn" id="btn-tab-signup" onclick="switchAuthTab('signup')">Sign Up</button>
-                </div>
-                <!-- سائن ان فارم -->
-                <form id="signin-form">
-                    <div class="form-group">
-                        <label>Username / Email</label>
-                        <input type="text" id="signin-username" class="form-control" required placeholder="Enter username or email">
-                    </div>
-                    <div class="form-group">
-                        <label>Password</label>
-                        <input type="password" id="signin-password" class="form-control" required placeholder="••••••••">
-                    </div>
-                    <div id="signin-error" class="msg-error" style="margin-bottom: 10px;"></div>
-                    <button type="submit" class="btn">Sign In</button>
-                </form>
-                <!-- سائن اپ فارم -->
-                <form id="signup-form" style="display: none;">
-                    <div class="form-group">
-                        <label>Choose Username</label>
-                        <input type="text" id="signup-username" class="form-control" required placeholder="Choose a unique username">
-                    </div>
-                    <div class="form-group">
-                        <label>Email Address</label>
-                        <input type="email" id="signup-email" class="form-control" required placeholder="user@example.com">
-                    </div>
-                    <div class="form-group">
-                        <label>Password</label>
-                        <input type="password" id="signup-password" class="form-control" required placeholder="••••••••">
-                    </div>
-                    <!-- ریفرل یوزر نام درج کرنے کی جگہ -->
-                    <div class="form-group">
-                        <label>یہاں ریفرل یوزر نام یا کوڈ درج کریں (اگر ہو)</label>
-                        <input type="text" id="signup-ref-code" class="form-control" placeholder="Optional referral code">
-                    </div>
-                    <div class="terms-group">
-                        <input type="checkbox" id="terms-checkbox">
-                        <label for="terms-checkbox" style="display: inline; color: var(--text-main); cursor: pointer;">
-                            I agree to the <a onclick="openTermsModal(event)">Terms & Conditions</a> stating that the company is not responsible for any profit, loss, or withdrawal issues.
-                        </label>
-                    </div>
-                    <div id="signup-error" class="msg-error" style="margin-bottom: 10px;"></div>
-                    <button type="submit" class="btn">Create Account</button>
-                </form>
-            </div>
-        </div>
-
-        <!-- ڈ্যাশবোর্ড سکرین جو لاگ ان کے بعد ظاہر ہوگی -->
-        <div id="dashboard-view" style="display: none;">
-            <div class="dashboard-header">
-                <h3>Boxify Dashboard (<span id="logged-username-display" style="color:var(--accent);"></span>)</h3>
-                <div class="user-stats">
-                    <div class="stat-badge">Winnings: <span id="lbl-winnings">0</span> PKR</div>
-                    <div class="stat-badge">Commission: <span id="lbl-commission">0</span> PKR</div>
-                    <div class="stat-badge">Games Played: <span id="lbl-games-played">0</span>/3</div>
-                    <div class="stat-badge">Referrals: <span id="lbl-referrals">0</span></div>
-                </div>
-            </div>
-            <!-- ذاتی ریفرل لنک شیئر کرنے کا سیکشن -->
-            <div style="background: rgba(99, 102, 241, 0.05); border: 1px solid var(--border); padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <span style="font-size: 13px; color: var(--text-main);">:</span>
-                    <input type="text" id="my-referral-link" readonly class="form-control" style="padding: 6px; font-size: 13px; margin-top: 4px; background: var(--bg-color);" value="">
-                </div>
-                <button class="btn" style="width: auto; padding: 8px 15px; font-size: 13px; margin-top: 15px;" onclick="copyReferralLink()">copy</button>
-            </div>
-            <div class="content-body">
-                <div id="packages-section" class="packages-container">
-                    <h3>Select Your Deposit Package</h3>
-                    <div class="packages-grid">
-                        <div class="package-card" onclick="initiateDeposit(100)">
-                            <h4>100 PKR</h4>
-                            <p>Three Lucky Box Chances</p>
-                        </div>
-                        <div class="package-card" onclick="initiateDeposit(200)">
-                            <h4>200 PKR</h4>
-                            <p>Three Lucky Box Chances</p>
-                        </div>
-                        <div class="package-card" onclick="initiateDeposit(500)">
-                            <h4>500 PKR</h4>
-                            <p>Three Lucky Box Chances</p>
-                        </div>
-                        <div class="package-card" onclick="initiateDeposit(1000)">
-                            <h4>1000 PKR</h4>
-                            <p>Three Lucky Box Chances</p>
-                        </div>
-                        <div class="package-card" onclick="initiateDeposit(5000)">
-                            <h4>5000 PKR</h4>
-                            <p>Three Lucky Box Chances</p>
-                        </div>
-                        <div class="package-card" onclick="initiateDeposit(10000)">
-                            <h4>10000 PKR</h4>
-                            <p>Three Lucky Box Chances</p>
-                        </div>
-                    </div>
-                </div>
-                <div id="deposit-section" class="deposit-section">
-                    <h3 style="margin-bottom: 15px; text-align: center;">Payment & Verification</h3>
-                    <div class="raast-info-box">
-                                               <h4 style="color: var(--text-main); margin-bottom: 5px;">EasyPaisa Deposit</h4>
-                        <p style="font-size: 14px; color: var(--text-main); margin: 3px 0;">Account Name: <b>EasyPaisa</b></p>
-                        <p style="font-size: 14px; color: var(--text-main); margin: 3px 0;">Account Holder Name: <b>Adnan Ahmad</b></p>
-                        <p style="font-size: 14px; color: var(--text-main); margin: 3px 0;">Account Number: <b>03074591741</b></p>
-
-                    <form id="deposit-verify-form">
-                        <div class="form-group">
-                            <label>Transaction ID (Trx ID / Reference No)</label>
-                            <input type="text" id="trx-id" class="form-control" required placeholder="e.g., 8392019283">
-                        </div>
-                        <div class="form-group">
-                            <label>Payment Screenshot</label>
-                            <input type="file" id="payment-screenshot" class="form-control" accept="image/*" required style="padding: 8px;">
-                        </div>
-                        <button type="submit" class="btn" style="margin-top: 10px;">Submit Deposit Request</button>
-                    </form>
-                    <!-- ایڈمن اتھارٹی پینل: یہ صرف سرور سائیڈ ویری فائیڈ Dr-Adnan کے لیے ظاہر ہوگا -->
-                    <div id="admin-panel-section" style="margin-top: 25px; border-top: 2px dashed var(--warning); padding-top: 15px; text-align: center; display: none;">
-                        <p style="font-size: 14px; color: var(--warning); font-weight: bold; margin-bottom: 8px;">[Admin Authority Panel]</p>
-                        <p style="font-size: 12px; color: var(--text-main); margin-bottom: 10px;">ایڈمن اس بٹن کے ذریعے کسی بھی یوزر کو بغیر تصدیق کے سیدھا گیم کھیلنے کی اجازت دے سکتا ہے:</p>
-                        <button class="btn" style="background: var(--accent);" onclick="adminApproveDeposit()">Authorize & Grant Game Access (Admin Override)</button>
-                    </div>
-                </div>
-                <div id="game-section" class="game-section">
-                    <div class="game-info">
-                        <div>Verified Deposit: <strong id="current-deposit-val">0</strong> PKR</div>
-                        <div>Boxes Remaining: <strong id="boxes-remaining">3</strong> / 3</div>
-                    </div>
-                    <p style="margin-bottom: 15px; color: var(--text-main); font-size: 14px;">مجموعی طور پر 10 بکس ہیں، ان میں سے کوئی سے 3 بکس کھولیں:</p>
-                    <div class="boxes-grid" id="boxes-grid-container">
-                    </div>
-                    <div id="prize-action-card" class="prize-action-card">
-                        <h4 id="prize-announcement" style="margin-bottom: 10px; color: var(--accent);"></h4>
-                        <button class="btn" id="accept-prize-btn" onclick="acceptCurrentPrize()" style="max-width: 200px; margin: 0 auto;">Accept Prize</button>
-                    </div>
-                </div>
-                <div class="withdraw-container">
-                    <h3 style="font-size: 18px; margin-bottom: 5px;">Withdrawal Center</h3>
-                    <p style="font-size: 13px; color: var(--text-main); margin-bottom: 15px;">Choose your preferred withdrawal option below:</p>
-                    <div class="withdraw-options-grid">
-                        <div class="withdraw-option-card">
-                            <h4>Option 1: Winnings Withdrawal</h4>
-                            <p>Withdraw accumulated game winnings after completing 3 full game sessions, OR by bringing 3 active referrals.</p>
-                            <div id="msg-winnings" style="margin-bottom: 10px;"></div>
-                            <button class="btn" onclick="requestWinningsWithdrawal()">Withdraw Winnings</button>
-                        </div>
-                        <div class="withdraw-option-card">
-                            <h4>Option 2: Referral Commission</h4>
-                            <p>Withdraw your referral commission instantly anytime with zero restrictions or conditions.</p>
-                            <div id="msg-commission" style="margin-bottom: 10px;"></div>
-                            <button class="btn" style="background: var(--accent);" onclick="requestCommissionWithdrawal()">Withdraw Commission</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div id="terms-modal" class="modal-overlay">
-        <div class="modal-content">
-            <h3>Terms & Conditions</h3>
-            <p>1. You are depositing on this platform at your own discretion, choice, and personal risk.</p>
-            <p>2. The company, platform, or developer will not be held responsible for any profit or loss incurred on this platform.</p>
-            <p>3. The company does not guarantee or take responsibility for whether you win any prize during the game or not.</p>
-            <p>4. The company will not be legally or financially liable for any delays or failure in receiving withdrawals.</p>
-            <button class="btn" onclick="closeTermsModal()" style="margin-top: 10px;">Got It (Close)</button>
-        </div>
-    </div>
-
+    <!-- App Logic Script -->
     <script>
-        // فائر بیس سیشن کو براؤزر میں پرمیننٹلی سیو کرنے کے لیے
-firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch((error) => { console.error("Persistence Error: ", error); });
-
-    console.error("Persistence Error: ", error);
-  });
-
-        let currentUsername = "";
-        let currentUserEmail = "";
-        let gameWinningsBalance = 0;
-        let referralCommissionBalance = 0;
-        let referralCount = 0;
-        let gamesPlayedCount = 0;
-        let currentDeposit = 0;
-        let openedCount = 0;
-        let currentTempPrize = 0;
-        let gameActive = false;
-        let generatedPrizes = [];
-
-        function switchAuthTab(tab) {
-            const signinForm = document.getElementById('signin-form');
-            const signupForm = document.getElementById('signup-form');
-            const btnSignin = document.getElementById('btn-tab-signin');
-            const btnSignup = document.getElementById('btn-tab-signup');
-            document.getElementById('signin-error').innerText = '';
-            document.getElementById('signup-error').innerText = '';
+        // Tab Switcher
+        function switchTab(tab) {
+            const signinForm = document.getElementById('form-signin');
+            const signupForm = document.getElementById('form-signup');
+            const tabSignin = document.getElementById('tab-signin');
+            const tabSignup = document.getElementById('tab-signup');
 
             if (tab === 'signin') {
-                signinForm.style.display = 'block';
-                signupForm.style.display = 'none';
-                btnSignin.classList.add('active');
-                btnSignup.classList.remove('active');
+                signinForm.classList.remove('hidden');
+                signupForm.classList.add('hidden');
+                tabSignin.className = "flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all text-white bg-[#6366f1] shadow-md";
+                tabSignup.className = "flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all text-gray-400 hover:text-white";
             } else {
-                signinForm.style.display = 'none';
-                signupForm.style.display = 'block';
-                btnSignup.classList.add('active');
-                btnSignin.classList.remove('active');
+                signupForm.classList.remove('hidden');
+                signinForm.classList.add('hidden');
+                tabSignup.className = "flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all text-white bg-[#6366f1] shadow-md";
+                tabSignin.className = "flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all text-gray-400 hover:text-white";
+            }
+            hideToast();
+        }
+
+        // Toggle Password Visibility
+        function togglePassword(fieldId, btn) {
+            const input = document.getElementById(fieldId);
+            const icon = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
             }
         }
 
-        // فائر بیس سائن ان
-                document.getElementById('signin-form').addEventListener('submit', async function(e) {
+        // Toast Notification System
+        function showToast(message, type = 'error') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.remove('hidden', 'bg-red-500/20', 'text-red-400', 'bg-emerald-500/20', 'text-emerald-400');
+            if (type === 'error') {
+                toast.classList.add('bg-red-500/20', 'text-red-400', 'border', 'border-red-500/30');
+            } else {
+                toast.classList.add('bg-emerald-500/20', 'text-emerald-400', 'border', 'border-emerald-500/30');
+            }
+        }
+
+        function hideToast() {
+            document.getElementById('toast').classList.add('hidden');
+        }
+
+        // Sign In Handler
+        async function handleSignIn(e) {
             e.preventDefault();
-            let identifier = document.getElementById('signin-username').value.trim();
-            let pWord = document.getElementById('signin-password').value.trim();
-            const errorEl = document.getElementById('signin-error');
-            errorEl.innerText = "";
+            const email = document.getElementById('signin-email').value;
+            const password = document.getElementById('signin-password').value;
 
             try {
-                
-                                if (identifier.toLowerCase() === "dr-adnan") {
-                    let adminSecretPassword = "Dras123@@";
-                    if (pWord === adminSecretPassword) {
-                        currentUsername = "Dr-Adnan";
-                        currentUserEmail = "admin@boxify.app";
-                        gameWinningsBalance = 0;
-                        referralCommissionBalance = 0;
-                        referralCount = 0;
-                        gamesPlayedCount = 0;
-                        launchDashboard();
-                        return;
-                    } else {
-                        errorEl.innerText = "ایڈمن کا پاسورڈ غلط ہے۔";
-                        return;
-                    }
-                }
-
-
-                // عام یوزرز کے لیے پرانا طریقہ (یوزر نیم سے ای میل فائنڈ کر کے لاگ ان کرنا)
-                let emailToUse = identifier;
-                if (!identifier.includes("@")) {
-                    const q = window.firebaseModules.query(
-                        window.firebaseModules.collection(window.appDb, "users"),
-                        window.firebaseModules.where("username", "==", identifier)
-                    );
-                    const querySnapshot = await window.firebaseModules.getDocs(q);
-                    if (!querySnapshot.empty) {
-                        emailToUse = querySnapshot.docs[0].data().email;
-                    } else {
-                        emailToUse = identifier.toLowerCase() + "@boxify.app";
-                    }
-                }
-                const userCredential = await window.firebaseModules.signInWithEmailAndPassword(window.appAuth, emailToUse, pWord);
-                const user = userCredential.user;
-
-                const docRef = window.firebaseModules.doc(window.appDb, "users", user.uid);
-                const docSnap = await window.firebaseModules.getDoc(docRef);
-                if (docSnap.exists()) {
-                    let data = docSnap.data();
-                    currentUsername = data.username;
-                    currentUserEmail = user.email;
-                    gameWinningsBalance = data.winnings || 0;
-                    referralCommissionBalance = data.commission || 0;
-                    referralCount = data.referrals || 0;
-                    gamesPlayedCount = data.gamesPlayed || 0;
-                } else {
-                    currentUsername = identifier;
-                }
-                launchDashboard();
-            } catch (err) {
-                errorEl.innerText = "لاگ ان ناکام ہو گیا! براہ کرم درست یوزر نیم اور پاسورڈ درج کریں۔";
+                showToast("Signing in...", "success");
+                await window.signInWithEmailAndPassword(window.firebaseAuth, email, password);
+                showToast("Login successful! Redirecting...", "success");
+                // Session management & redirection logic handles dashboard access here
+            } catch (error) {
+                showToast(error.message);
             }
-        });
+        }
 
-
-        // فائر بیس سائن اپ
-        document.getElementById('signup-form').addEventListener('submit', async function(e) {
+        // Sign Up Handler
+        async function handleSignUp(e) {
             e.preventDefault();
-            const termsChecked = document.getElementById('terms-checkbox').checked;
-            const errorEl = document.getElementById('signup-error');
-            errorEl.innerText = "";
+            const name = document.getElementById('signup-name').value;
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            const confirmPassword = document.getElementById('signup-confirm-password').value;
+            const termsChecked = document.getElementById('terms-check').checked;
 
             if (!termsChecked) {
-                errorEl.innerText = "Please check the Terms & Conditions checkbox to proceed.";
+                showToast("You must agree to the Terms & Conditions.");
                 return;
             }
 
-            let uName = document.getElementById('signup-username').value.trim();
-            let email = document.getElementById('signup-email').value.trim();
-            let pWord = document.getElementById('signup-password').value.trim();
-
-            if (!uName || !email || !pWord) {
-                errorEl.innerText = "Please fill in all fields.";
-                return;
-            }
-
-            if (uName.toLowerCase() === window.serverAdminUsername.toLowerCase()) {
-                errorEl.innerText = "This username is reserved for the administrator and cannot be registered.";
+            if (password !== confirmPassword) {
+                showToast("Passwords do not match.");
                 return;
             }
 
             try {
-                const userCredential = await window.firebaseModules.createUserWithEmailAndPassword(window.appAuth, email, pWord);
+                showToast("Creating account...", "success");
+                const userCredential = await window.createUserWithEmailAndPassword(window.firebaseAuth, email, password);
                 const user = userCredential.user;
 
-                await window.firebaseModules.setDoc(window.firebaseModules.doc(window.appDb, "users", user.uid), {
-                    username: uName,
+                // Save additional user info in Firestore
+                await window.setDoc(window.doc(window.firebaseDb, "users", user.uid), {
+                    fullName: name,
                     email: email,
-                    winnings: 0,
-                    commission: 0,
-                    referrals: 0,
-                    gamesPlayed: 0,
-                    createdAt: new Date().toISOString()
+                    balance: 0,
+                    activeReferrals: 0,
+                    createdAt: new Date().toISOString(),
+                    role: "user"
                 });
 
-                currentUsername = uName;
-                currentUserEmail = email;
-                launchDashboard();
-            } catch (err) {
-                errorEl.innerText = err.message || "Registration failed. Try a different email or username.";
-            }
-        });
-
-        function launchDashboard() {
-            let personalLink = window.location.origin + window.location.pathname + "?ref=7824";
-            document.getElementById('my-referral-link').value = personalLink;
-            document.getElementById('logged-username-display').innerText = currentUsername;
-            document.getElementById('auth-view').style.display = 'none';
-            document.getElementById('dashboard-view').style.display = 'block';
-
-            if (currentUsername.toLowerCase() === window.serverAdminUsername.toLowerCase()) {
-                document.getElementById('admin-panel-section').style.display = 'block';
-            } else {
-                document.getElementById('admin-panel-section').style.display = 'none';
-            }
-            updateStatsUI();
-        }
-
-        function copyReferralLink() {
-            const linkInput = document.getElementById('my-referral-link');
-            linkInput.select();
-            navigator.clipboard.writeText(linkInput.value);
-            alert("ریفرل لنک کاپی ہو گیا!");
-        }
-
-        function openTermsModal(e) {
-            if(e) e.preventDefault();
-            document.getElementById('terms-modal').style.display = 'flex';
-        }
-
-        function closeTermsModal() {
-            document.getElementById('terms-modal').style.display = 'none';
-        }
-
-        function updateStatsUI() {
-            document.getElementById('lbl-winnings').innerText = gameWinningsBalance;
-            document.getElementById('lbl-commission').innerText = referralCommissionBalance;
-            document.getElementById('lbl-games-played').innerText = gamesPlayedCount;
-            document.getElementById('lbl-referrals').innerText = referralCount;
-        }
-
-        function initiateDeposit(amount) {
-            currentDeposit = amount;
-            document.getElementById('packages-section').style.display = 'none';
-            document.getElementById('selected-pkg-amount').innerText = amount;
-            document.getElementById('deposit-section').style.display = 'block';
-        }
-
-        document.getElementById('deposit-verify-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const trxId = document.getElementById('trx-id').value;
-            const fileInput = document.getElementById('payment-screenshot').files[0];
-            if (!trxId || !fileInput) {
-                alert("Please provide both Transaction ID and Screenshot.");
-                return;
-            }
-            alert("Your deposit request has been submitted successfully to Firebase backend!");
-        });
-
-        function adminApproveDeposit() {
-            if (currentUsername.toLowerCase() !== window.serverAdminUsername.toLowerCase()) {
-                alert("Unauthorized action!");
-                return;
-            }
-            document.getElementById('deposit-section').style.display = 'none';
-            document.getElementById('game-section').style.display = 'block';
-            openedCount = 0;
-            gameActive = true;
-            document.getElementById('current-deposit-val').innerText = currentDeposit;
-            document.getElementById('boxes-remaining').innerText = 3;
-            document.getElementById('prize-action-card').style.display = 'none';
-            generateBoxesPrizes();
-            renderBoxes();
-        }
-
-        function generateBoxesPrizes() {
-            let maxTotalAllowed = currentDeposit * 0.6;
-            let p1 = Math.floor(Math.random() * (maxTotalAllowed * 0.3)) + 5;
-            let p2 = Math.floor(Math.random() * (maxTotalAllowed * 0.3)) + 5;
-            let p3 = Math.floor(Math.max(5, maxTotalAllowed - p1 - p2));
-            if (p1 + p2 + p3 > maxTotalAllowed) {
-                p3 = Math.floor(maxTotalAllowed - p1 - p2);
-                if(p3 < 5) p3 = 5;
-            }
-            let remainingPrizes = [1000, 500, 100, 50, 20, 10, 0];
-            remainingPrizes.sort(() => Math.random() - 0.5);
-            generatedPrizes = [
-                { prize: p1, clickable: true },
-                { prize: p2, clickable: true },
-                { prize: p3, clickable: true },
-                { prize: remainingPrizes[0], clickable: false },
-                { prize: remainingPrizes[1], clickable: false },
-                { prize: remainingPrizes[2], clickable: false },
-                { prize: remainingPrizes[3], clickable: false },
-                { prize: remainingPrizes[4], clickable: false },
-                { prize: remainingPrizes[5], clickable: false },
-                { prize: remainingPrizes[6], clickable: false }
-            ];
-            generatedPrizes.sort(() => Math.random() - 0.5);
-        }
-
-        function renderBoxes() {
-            const container = document.getElementById('boxes-grid-container');
-            container.innerHTML = '';
-            generatedPrizes.forEach((item, index) => {
-                const box = document.createElement('div');
-                box.className = 'box-item';
-                box.innerText = `Box ${index + 1}`;
-                box.dataset.index = index;
-                box.onclick = function() {
-                    handleBoxClick(box, item);
-                };
-                container.appendChild(box);
-            });
-        }
-
-        function handleBoxClick(boxElement, item) {
-            if (!gameActive) return;
-            if (boxElement.classList.contains('opened') || boxElement.classList.contains('disabled')) return;
-            let clickableCountOpened = document.querySelectorAll('.box-item.opened').length;
-            if (clickableCountOpened >= 3) return;
-
-            boxElement.classList.add('opened');
-            boxElement.innerHTML = `Box<br><strong>${item.prize} PKR</strong>`;
-            currentTempPrize = item.prize;
-            document.getElementById('prize-announcement').innerText = `Congratulations! You won ${item.prize} PKR from this box.`;
-            document.getElementById('prize-action-card').style.display = 'block';
-        }
-
-        async function acceptCurrentPrize() {
-            gameWinningsBalance += currentTempPrize;
-            openedCount++;
-            updateStatsUI();
-            try {
-                const user = window.appAuth.currentUser;
-                if (user) {
-                    await window.firebaseModules.updateDoc(window.firebaseModules.doc(window.appDb, "users", user.uid), {
-                        winnings: window.firebaseModules.increment(currentTempPrize)
-                    });
-                }
-            } catch (e) {
-                console.error("Firebase update error:", e);
-            }
-            document.getElementById('prize-action-card').style.display = 'none';
-            document.getElementById('boxes-remaining').innerText = 3 - openedCount;
-            if (openedCount === 3) {
-                revealRemainingBoxes();
+                showToast("Account created successfully!", "success");
+            } catch (error) {
+                showToast(error.message);
             }
         }
 
-        async function revealRemainingBoxes() {
-            gameActive = false;
-            gamesPlayedCount++;
-            updateStatsUI();
-            try {
-                const user = window.appAuth.currentUser;
-                if (user) {
-                    await window.firebaseModules.updateDoc(window.firebaseModules.doc(window.appDb, "users", user.uid), {
-                        gamesPlayed: window.firebaseModules.increment(1)
-                    });
-                }
-            } catch (e) {
-                console.error("Firebase game count error:", e);
-            }
-            const boxes = document.querySelectorAll('.box-item');
-            boxes.forEach((box, index) => {
-                if (!box.classList.contains('opened')) {
-                    box.classList.add('disabled');
-                    box.innerHTML = `Box ${index + 1}<br><span style="font-size:12px; color:#facc15;">(${generatedPrizes[index].prize} PKR)</span>`;
-                }
-            });
-            setTimeout(() => {
-                alert("You have completed this session (3 boxes opened). Returning to packages view.");
-                document.getElementById('game-section').style.display = 'none';
-                document.getElementById('packages-section').style.display = 'block';
-            }, 1500);
-        }
-
-        function requestWinningsWithdrawal() {
-            const msgEl = document.getElementById('msg-winnings');
-            if (gamesPlayedCount < 3 && referralCount < 3) {
-                msgEl.className = "msg-error";
-                msgEl.innerText = "Condition not met! Either complete playing 3 times yourself, or bring 3 active referrals to withdraw winnings.";
-            } else {
-                if (gameWinningsBalance <= 0) {
-                    msgEl.className = "msg-error";
-                    msgEl.innerText = "You have no winnings balance to withdraw!";
-                } else {
-                    msgEl.className = "msg-success";
-                    msgEl.innerText = "Success! Your game winnings have been submitted for withdrawal.";
-                }
-            }
-        }
-
-        function requestCommissionWithdrawal() {
-            const msgEl = document.getElementById('msg-commission');
-            if (referralCommissionBalance <= 0) {
-                msgEl.className = "msg-error";
-                msgEl.innerText = "No referral commission balance available to withdraw.";
-            } else {
-                msgEl.className = "msg-success";
-                msgEl.innerText = "Success! Your referral commission has been transferred instantly!";
-                referralCommissionBalance = 0;
-                updateStatsUI();
-            }
+        function showTermsModal() {
+            alert("Terms & Conditions:\n\n1. Boxify Portal operates under strict risk guidelines.\n2. Withdrawals require verified active referrals.\n3. Manual admin verification applies to all deposits and withdrawals.");
         }
     </script>
 </body>
