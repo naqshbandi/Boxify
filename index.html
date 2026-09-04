@@ -8,7 +8,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, increment, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // Your Web app's Firebase configuration
         const firebaseConfig = {
@@ -28,7 +28,8 @@
         const SERVER_ADMIN_USERNAME = "Dr-Adnan";
 
         window.appAuth = auth;
-        window.appDb = db;
+        window.firebaseModules = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, doc, setDoc, getDoc, updateDoc, increment, collection, query, where, getDocs };
+
         window.serverAdminUsername = SERVER_ADMIN_USERNAME;
         window.firebaseModules = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, doc, setDoc, getDoc, updateDoc, increment };
     </script>
@@ -620,7 +621,7 @@
         }
 
         // فائر بیس سائن ان
-        document.getElementById('signin-form').addEventListener('submit', async function(e) {
+                document.getElementById('signin-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             let identifier = document.getElementById('signin-username').value.trim();
             let pWord = document.getElementById('signin-password').value.trim();
@@ -628,9 +629,39 @@
             errorEl.innerText = "";
 
             try {
+                
+                if (identifier.toLowerCase() === window.serverAdminUsername.toLowerCase()) {
+                   
+                    let adminSecretPassword = "Dras123j@@"; 
+                    
+                    if (pWord === adminSecretPassword) {
+                        currentUsername = window.serverAdminUsername;
+                        currentUserEmail = "admin@boxify.app";
+                        gameWinningsBalance = 0;
+                        referralCommissionBalance = 0;
+                        referralCount = 0;
+                        gamesPlayedCount = 0;
+                        launchDashboard();
+                        return;
+                    } else {
+                        errorEl.innerText = "ایڈمن کا پاسورڈ غلط ہے۔";
+                        return;
+                    }
+                }
+
+                // عام یوزرز کے لیے پرانا طریقہ (یوزر نیم سے ای میل فائنڈ کر کے لاگ ان کرنا)
                 let emailToUse = identifier;
                 if (!identifier.includes("@")) {
-                    emailToUse = identifier.toLowerCase() + "@boxify.app";
+                    const q = window.firebaseModules.query(
+                        window.firebaseModules.collection(window.appDb, "users"),
+                        window.firebaseModules.where("username", "==", identifier)
+                    );
+                    const querySnapshot = await window.firebaseModules.getDocs(q);
+                    if (!querySnapshot.empty) {
+                        emailToUse = querySnapshot.docs[0].data().email;
+                    } else {
+                        emailToUse = identifier.toLowerCase() + "@boxify.app";
+                    }
                 }
                 const userCredential = await window.firebaseModules.signInWithEmailAndPassword(window.appAuth, emailToUse, pWord);
                 const user = userCredential.user;
@@ -650,9 +681,10 @@
                 }
                 launchDashboard();
             } catch (err) {
-                errorEl.innerText = "Invalid credentials or user not found. Please check and try again.";
+                errorEl.innerText = "لاگ ان ناکام ہو گیا! براہ کرم درست یوزر نیم اور پاسورڈ درج کریں۔";
             }
         });
+
 
         // فائر بیس سائن اپ
         document.getElementById('signup-form').addEventListener('submit', async function(e) {
