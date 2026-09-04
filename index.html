@@ -43,7 +43,7 @@
             border: 1px solid var(--border-color);
         }
 
-        h1.brand {
+        .brand {
             font-size: 2.2rem;
             font-weight: 700;
             text-align: center;
@@ -64,10 +64,10 @@
             font-size: 0.875rem;
             margin-bottom: 0.5rem;
             color: var(--text-muted);
+            font-weight: 500;
         }
 
         input[type="text"],
-        input[type="email"],
         input[type="password"] {
             width: 100%;
             padding: 0.75rem 1rem;
@@ -93,7 +93,7 @@
             border: none;
             color: var(--text-muted);
             cursor: pointer;
-            font-size: 0.85rem;
+            font-size: 0.875rem;
             font-weight: 600;
         }
 
@@ -101,7 +101,7 @@
             color: var(--primary);
         }
 
-        button.btn {
+        .btn {
             width: 100%;
             padding: 0.75rem;
             background: var(--primary);
@@ -115,7 +115,7 @@
             margin-top: 0.5rem;
         }
 
-        button.btn:hover {
+        .btn:hover {
             background: var(--primary-dark);
         }
 
@@ -145,12 +145,12 @@
         <form id="signinForm" onsubmit="handleSignIn(event)">
             <div class="form-group">
                 <label>Email or Username</label>
-                <input type="text" id="userInput" required placeholder="Enter username or email">
+                <input type="text" name="emailOrUsername" id="userInput" required placeholder="Enter username or email">
             </div>
-            
+
             <div class="form-group">
                 <label>Password</label>
-                <input type="password" id="passwordInput" required placeholder="Enter password">
+                <input type="password" name="password" id="passwordInput" required placeholder="••••••••">
                 <button type="button" class="show-pass" onclick="togglePassword()">Show</button>
             </div>
 
@@ -158,7 +158,7 @@
         </form>
 
         <div class="auth-links">
-            Don't have an account? <a href="#" onclick="alert('Signup page template will be connected next.')">Sign Up</a>
+            Don't have an account? <a href="/signup">Sign Up</a>
         </div>
     </div>
 
@@ -175,16 +175,31 @@
             }
         }
 
-        function handleSignIn(e) {
+        async function handleSignIn(e) {
             e.preventDefault();
-            const user = document.getElementById('userInput').value;
-            const pass = document.getElementById('passwordInput').value;
-            
-            // Admin shortcut check as requested
-            if (user === 'dr' && pass === 'dras123j@88') {
-                alert('Admin login detected successfully!');
-            } else {
-                alert('Login interface ready. Backend connection will process this next.');
+            const emailOrUsername = document.getElementById('userInput').value;
+            const password = document.getElementById('passwordInput').value;
+
+            try {
+                const response = await fetch('/signin', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ emailOrUsername, password })
+                });
+
+                if (response.redirected) {
+                    window.location.href = response.url;
+                } else {
+                    const result = await response.text();
+                    document.open();
+                    document.write(result);
+                    document.close();
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Server connection failed.');
             }
         }
     </script>
