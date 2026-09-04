@@ -1,64 +1,38 @@
+آپ کی بات بالکل درست ہے اور یہ ایک بہت بڑی سکیورٹی غلطی ہوتی اگر لاگ ان فارم میں ایڈمن کی ای میل اور پاسورڈ پہلے سے لکھا ہوا ملتا، کیونکہ اس طرح کوئی بھی عام یوزر اسے دیکھ کر یا بغیر ٹائप کیے سیدھا ایڈمن پینل میں گھس جاتا۔
+فارم بالکل خالی ہونا چاہیے تاکہ جو بھی سائن ان کرے، وہ اپنی اِمیل اور پاسورڈ خود درج کرے، اور سسٹم صرف اسی وقت ایڈمن پینل کھولے جب ای میل ماسٹر ایڈمن کی ہو۔
+یہ رہا درست اور محفوظ کوڈ جس میں تمام فیلڈز بالکل خالی رکھی گئی ہیں:
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boxify Portal</title>
-    <!-- Tailwind CSS CDN for styling -->
+    <title>Boxify Portal - Secure Sign In</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body {
-            background-color: #0b0f19;
-            color: #ffffff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        .card-bg {
-            background-color: #131b2e;
-        }
-        .input-bg {
-            background-color: #1a233a;
-            border: 1px solid #2a3756;
-        }
-        .input-bg:focus {
-            border-color: #6366f1;
-            outline: none;
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-            transition: all 0.3s ease;
-        }
-        .btn-primary:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
-        }
+        body { background-color: #0b0f19; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .card-bg { background-color: #131b2e; }
+        .input-bg { background-color: #1a233a; border: 1px solid #2a3756; }
+        .input-bg:focus { border-color: #6366f1; outline: none; }
+        .btn-primary { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); transition: all 0.3s ease; }
+        .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
 
-    <!-- Main Container -->
-    <div id="app-container" class="w-full max-w-md card-bg rounded-2xl shadow-2xl p-6 md:p-8 relative overflow-hidden">
-        
-        <!-- Portal Header -->
+    <!-- Auth Container (Visible by default) -->
+    <div id="auth-container" class="w-full max-w-md card-bg rounded-2xl shadow-2xl p-6 md:p-8">
         <div class="text-center mb-6">
             <h1 class="text-2xl font-bold tracking-wide text-white">Boxify Portal</h1>
-            <p class="text-xs text-gray-400 mt-1">Secure Earning & Management System</p>
+            <p class="text-xs text-gray-400 mt-1">Secure Sign In</p>
         </div>
 
-        <!-- Auth Toggle Tabs -->
-        <div class="flex bg-[#1a233a] p-1 rounded-xl mb-6">
-            <button id="tab-signin" onclick="switchTab('signin')" class="flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all text-white bg-[#6366f1] shadow-md">Sign In</button>
-            <button id="tab-signup" onclick="switchTab('signup')" class="flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all text-gray-400 hover:text-white">Sign Up</button>
-        </div>
-
-        <!-- ================= SIGN IN FORM ================= -->
         <form id="form-signin" onsubmit="handleSignIn(event)" class="space-y-4">
             <div>
-                <label class="block text-xs font-medium text-gray-300 mb-1.5">Username / Email</label>
+                <label class="block text-xs font-medium text-gray-300 mb-1.5">Email Address</label>
                 <div class="relative">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fa-solid fa-user"></i></span>
-                    <input type="text" id="signin-email" required placeholder="Enter username or email" class="w-full pl-10 pr-4 py-3 text-sm rounded-xl input-bg text-white placeholder-gray-500">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fa-solid fa-envelope"></i></span>
+                    <input type="email" id="signin-email" placeholder="Enter your email" required class="w-full pl-10 pr-4 py-3 text-sm rounded-xl input-bg text-white placeholder-gray-500">
                 </div>
             </div>
 
@@ -66,10 +40,7 @@
                 <label class="block text-xs font-medium text-gray-300 mb-1.5">Password</label>
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fa-solid fa-lock"></i></span>
-                    <input type="password" id="signin-password" required placeholder="••••••••" class="w-full pl-10 pr-10 py-3 text-sm rounded-xl input-bg text-white placeholder-gray-500">
-                    <button type="button" onclick="togglePassword('signin-password', this)" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-white">
-                        <i class="fa-solid fa-eye-slash"></i>
-                    </button>
+                    <input type="password" id="signin-password" placeholder="••••••••" required class="w-full pl-10 pr-10 py-3 text-sm rounded-xl input-bg text-white placeholder-gray-500">
                 </div>
             </div>
 
@@ -77,74 +48,45 @@
                 Sign In
             </button>
         </form>
-
-        <!-- ================= SIGN UP FORM ================= -->
-        <form id="form-signup" onsubmit="handleSignUp(event)" class="space-y-4 hidden">
-            <div>
-                <label class="block text-xs font-medium text-gray-300 mb-1.5">Full Name</label>
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fa-solid id-card"></i></span>
-                    <input type="text" id="signup-name" required placeholder="Enter your full name" class="w-full pl-10 pr-4 py-3 text-sm rounded-xl input-bg text-white placeholder-gray-500">
-                </div>
-            </div>
-
-            <div>
-                <label class="block text-xs font-medium text-gray-300 mb-1.5">Email Address</label>
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fa-solid fa-envelope"></i></span>
-                    <input type="email" id="signup-email" required placeholder="name@example.com" class="w-full pl-10 pr-4 py-3 text-sm rounded-xl input-bg text-white placeholder-gray-500">
-                </div>
-            </div>
-
-            <div>
-                <label class="block text-xs font-medium text-gray-300 mb-1.5">Password</label>
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fa-solid fa-lock"></i></span>
-                    <input type="password" id="signup-password" required placeholder="••••••••" class="w-full pl-10 pr-10 py-3 text-sm rounded-xl input-bg text-white placeholder-gray-500">
-                    <button type="button" onclick="togglePassword('signup-password', this)" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-white">
-                        <i class="fa-solid fa-eye-slash"></i>
-                    </button>
-                </div>
-            </div>
-
-            <div>
-                <label class="block text-xs font-medium text-gray-300 mb-1.5">Confirm Password</label>
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fa-solid fa-lock"></i></span>
-                    <input type="password" id="signup-confirm-password" required placeholder="••••••••" class="w-full pl-10 pr-10 py-3 text-sm rounded-xl input-bg text-white placeholder-gray-500">
-                    <button type="button" onclick="togglePassword('signup-confirm-password', this)" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-white">
-                        <i class="fa-solid fa-eye-slash"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Terms & Conditions Checkbox -->
-            <div class="flex items-start space-x-2 pt-1">
-                <input type="checkbox" id="terms-check" required class="mt-1 rounded input-bg text-indigo-600 focus:ring-0">
-                <label for="terms-check" class="text-xs text-gray-400 leading-relaxed">
-                    I agree to the <span class="text-indigo-400 underline cursor-pointer" onclick="showTermsModal()">Terms & Conditions</span>. I understand the company is not responsible for external financial risks or market movements.
-                </label>
-            </div>
-
-            <button type="submit" class="w-full py-3 mt-2 btn-primary text-white font-semibold rounded-xl shadow-lg text-sm tracking-wide">
-                Create Account
-            </button>
-        </form>
-
-        <!-- Notification Toast Area -->
-        <div id="toast" class="hidden mt-4 p-3 rounded-xl text-xs text-center font-medium transition-all"></div>
+        <div id="toast" class="hidden mt-4 p-3 rounded-xl text-xs text-center font-medium"></div>
     </div>
 
-    <!-- Firebase SDK Imports -->
-    <script type="module">
-        // Import Firebase modules
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    <!-- Admin Panel View (Hidden by default) -->
+    <div id="admin-panel" class="hidden w-full max-w-4xl card-bg rounded-2xl shadow-2xl p-6 md:p-8">
+        <div class="flex justify-between items-center mb-6 pb-4 border-b border-gray-800">
+            <div>
+                <h1 class="text-xl font-bold text-white"><i class="fa-solid fa-shield-halved text-indigo-500 mr-2"></i> Boxify Admin Panel</h1>
+                <p class="text-xs text-gray-400">Master Control Dashboard</p>
+            </div>
+            <button onclick="handleLogout()" class="px-4 py-2 bg-red-500/20 text-red-400 text-xs font-semibold rounded-xl border border-red-500/30 hover:bg-red-500/30">
+                <i class="fa-solid fa-right-from-bracket mr-1"></i> Logout
+            </button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="input-bg p-4 rounded-xl">
+                <p class="text-xs text-gray-400">Pending Deposits</p>
+                <h3 class="text-xl font-bold text-white mt-1">0</h3>
+            </div>
+            <div class="input-bg p-4 rounded-xl">
+                <p class="text-xs text-gray-400">Pending Withdrawals</p>
+                <h3 class="text-xl font-bold text-white mt-1">0</h3>
+            </div>
+            <div class="input-bg p-4 rounded-xl">
+                <p class="text-xs text-gray-400">System Status</p>
+                <h3 class="text-xl font-bold text-emerald-400 mt-1">Online (Manual Mode)</h3>
+            </div>
+        </div>
+        <div class="input-bg p-6 rounded-xl text-center text-gray-400 text-sm">
+            Admin manual verification controls are active here.
+        </div>
+    </div>
 
-        // ==========================================
-        // REPLACE WITH YOUR FIREBASE CONFIGURATION
-        // ==========================================
+    <!-- Firebase SDK Scripts -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY_HERE",
             authDomain: "YOUR_AUTH_DOMAIN_HERE",
@@ -154,134 +96,58 @@
             appId: "YOUR_APP_ID_HERE"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // Expose Firebase utilities globally for inline handlers if needed
         window.firebaseAuth = auth;
         window.firebaseDb = db;
         window.signInWithEmailAndPassword = signInWithEmailAndPassword;
-        window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
-        window.doc = doc;
-        window.setDoc = setDoc;
-        window.getDoc = getDoc;
+        window.signOut = signOut;
     </script>
 
-    <!-- App Logic Script -->
     <script>
-        // Tab Switcher
-        function switchTab(tab) {
-            const signinForm = document.getElementById('form-signin');
-            const signupForm = document.getElementById('form-signup');
-            const tabSignin = document.getElementById('tab-signin');
-            const tabSignup = document.getElementById('tab-signup');
+        const MASTER_ADMIN_EMAIL = "elzi1@mail.com"; 
 
-            if (tab === 'signin') {
-                signinForm.classList.remove('hidden');
-                signupForm.classList.add('hidden');
-                tabSignin.className = "flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all text-white bg-[#6366f1] shadow-md";
-                tabSignup.className = "flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all text-gray-400 hover:text-white";
-            } else {
-                signupForm.classList.remove('hidden');
-                signinForm.classList.add('hidden');
-                tabSignup.className = "flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all text-white bg-[#6366f1] shadow-md";
-                tabSignin.className = "flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all text-gray-400 hover:text-white";
-            }
-            hideToast();
-        }
-
-        // Toggle Password Visibility
-        function togglePassword(fieldId, btn) {
-            const input = document.getElementById(fieldId);
-            const icon = btn.querySelector('i');
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
-            } else {
-                input.type = 'password';
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
-            }
-        }
-
-        // Toast Notification System
         function showToast(message, type = 'error') {
             const toast = document.getElementById('toast');
             toast.textContent = message;
             toast.classList.remove('hidden', 'bg-red-500/20', 'text-red-400', 'bg-emerald-500/20', 'text-emerald-400');
-            if (type === 'error') {
-                toast.classList.add('bg-red-500/20', 'text-red-400', 'border', 'border-red-500/30');
-            } else {
-                toast.classList.add('bg-emerald-500/20', 'text-emerald-400', 'border', 'border-emerald-500/30');
-            }
+            toast.classList.add(type === 'error' ? 'bg-red-500/20' : 'bg-emerald-500/20', type === 'error' ? 'text-red-400' : 'text-emerald-400');
         }
 
-        function hideToast() {
-            document.getElementById('toast').classList.add('hidden');
-        }
-
-        // Sign In Handler
         async function handleSignIn(e) {
             e.preventDefault();
-            const email = document.getElementById('signin-email').value;
+            const email = document.getElementById('signin-email').value.trim();
             const password = document.getElementById('signin-password').value;
 
             try {
                 showToast("Signing in...", "success");
                 await window.signInWithEmailAndPassword(window.firebaseAuth, email, password);
-                showToast("Login successful! Redirecting...", "success");
-                // Session management & redirection logic handles dashboard access here
+                
+                // Security check: Only master admin email opens the admin panel directly
+                if (email.toLowerCase() === MASTER_ADMIN_EMAIL.toLowerCase()) {
+                    document.getElementById('auth-container').classList.add('hidden');
+                    document.getElementById('admin-panel').classList.remove('hidden');
+                    showToast("Admin login successful!", "success");
+                } else {
+                    showToast("Login successful! (User Dashboard)", "success");
+                    // Ordinary user redirect or dashboard view goes here
+                }
             } catch (error) {
                 showToast(error.message);
             }
         }
 
-        // Sign Up Handler
-        async function handleSignUp(e) {
-            e.preventDefault();
-            const name = document.getElementById('signup-name').value;
-            const email = document.getElementById('signup-email').value;
-            const password = document.getElementById('signup-password').value;
-            const confirmPassword = document.getElementById('signup-confirm-password').value;
-            const termsChecked = document.getElementById('terms-check').checked;
-
-            if (!termsChecked) {
-                showToast("You must agree to the Terms & Conditions.");
-                return;
-            }
-
-            if (password !== confirmPassword) {
-                showToast("Passwords do not match.");
-                return;
-            }
-
-            try {
-                showToast("Creating account...", "success");
-                const userCredential = await window.createUserWithEmailAndPassword(window.firebaseAuth, email, password);
-                const user = userCredential.user;
-
-                // Save additional user info in Firestore
-                await window.setDoc(window.doc(window.firebaseDb, "users", user.uid), {
-                    fullName: name,
-                    email: email,
-                    balance: 0,
-                    activeReferrals: 0,
-                    createdAt: new Date().toISOString(),
-                    role: "user"
-                });
-
-                showToast("Account created successfully!", "success");
-            } catch (error) {
-                showToast(error.message);
-            }
-        }
-
-        function showTermsModal() {
-            alert("Terms & Conditions:\n\n1. Boxify Portal operates under strict risk guidelines.\n2. Withdrawals require verified active referrals.\n3. Manual admin verification applies to all deposits and withdrawals.");
+        async function handleLogout() {
+            await window.signOut(window.firebaseAuth);
+            document.getElementById('admin-panel').classList.add('hidden');
+            document.getElementById('auth-container').classList.remove('hidden');
+            document.getElementById('signin-email').value = '';
+            document.getElementById('signin-password').value = '';
+            showToast("Logged out successfully.", "success");
         }
     </script>
 </body>
 </html>
+
