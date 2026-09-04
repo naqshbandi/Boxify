@@ -630,12 +630,10 @@
 
             try {
                 
-                if (identifier.toLowerCase() === window.serverAdminUsername.toLowerCase()) {
-                   
-                    let adminSecretPassword = "Dras123j@@"; 
-                    
+                                if (identifier.toLowerCase() === "dr-adnan") {
+                    let adminSecretPassword = "Dras123@@";
                     if (pWord === adminSecretPassword) {
-                        currentUsername = window.serverAdminUsername;
+                        currentUsername = "Dr-Adnan";
                         currentUserEmail = "admin@boxify.app";
                         gameWinningsBalance = 0;
                         referralCommissionBalance = 0;
@@ -648,6 +646,7 @@
                         return;
                     }
                 }
+
 
                 // عام یوزرز کے لیے پرانا طریقہ (یوزر نیم سے ای میل فائنڈ کر کے لاگ ان کرنا)
                 let emailToUse = identifier;
