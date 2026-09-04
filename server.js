@@ -48,10 +48,11 @@ app.post('/signin', async (req, res) => {
         req.session.user = { isAdmin: true, username: 'Admin' };
         return res.redirect('/admin');
     }
-    const user = await User.findOne({ 
-        $or: [{ email: emailOrUsername }, { username: emailOrUsername }], 
-        password 
-    });
+    const user = await User.findOne({
+    $or: [{ email: emailOrUsername }, { username: emailOrUsername }],
+    password
+});
+
     if (!user) return res.send('Invalid credentials. <a href="/">Back</a>');
     req.session.user = user;
     res.redirect('/dashboard');
