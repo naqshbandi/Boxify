@@ -1,9 +1,9 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boxify Portal - Secure Sign In</title>
+    <title>Boxify Portal - Auth</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -13,18 +13,26 @@
         .input-bg:focus { border-color: #6366f1; outline: none; }
         .btn-primary { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); transition: all 0.3s ease; }
         .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+        .tab-btn.active { background-color: #6366f1; color: white; }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
 
-    <!-- Auth Container (Visible by default) -->
+    <!-- Auth Container -->
     <div id="auth-container" class="w-full max-w-md card-bg rounded-2xl shadow-2xl p-6 md:p-8">
         <div class="text-center mb-6">
             <h1 class="text-2xl font-bold tracking-wide text-white">Boxify Portal</h1>
-            <p class="text-xs text-gray-400 mt-1">Secure Sign In</p>
+            <p class="text-xs text-gray-400 mt-1">Secure Sign In & Sign Up</p>
         </div>
 
-        <form id="form-signin" onsubmit="handleSignIn(event)" class="space-y-4">
+        <!-- Toggle Tabs -->
+        <div class="flex rounded-xl input-bg p-1 mb-6">
+            <button onclick="switchTab('signin')" id="tab-signin" class="flex-1 py-2 text-xs font-semibold rounded-lg text-white active tab-btn transition-all">Sign In</button>
+            <button onclick="switchTab('signup')" id="tab-signup" class="flex-1 py-2 text-xs font-semibold rounded-lg text-gray-400 transition-all">Sign Up</button>
+        </div>
+
+        <!-- Sign In Form -->
+        <form id="form-signin" onsubmit="handleAuth(event, 'signin')" class="space-y-4">
             <div>
                 <label class="block text-xs font-medium text-gray-300 mb-1.5">Email Address</label>
                 <div class="relative">
@@ -45,15 +53,39 @@
                 Sign In
             </button>
         </form>
+
+        <!-- Sign Up Form -->
+        <form id="form-signup" onsubmit="handleAuth(event, 'signup')" class="space-y-4 hidden">
+            <div>
+                <label class="block text-xs font-medium text-gray-300 mb-1.5">Email Address</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fa-solid fa-envelope"></i></span>
+                    <input type="email" id="signup-email" placeholder="Enter your email" required class="w-full pl-10 pr-4 py-3 text-sm rounded-xl input-bg text-white placeholder-gray-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-300 mb-1.5">Password</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fa-solid fa-lock"></i></span>
+                    <input type="password" id="signup-password" placeholder="••••••••" required class="w-full pl-10 pr-10 py-3 text-sm rounded-xl input-bg text-white placeholder-gray-500">
+                </div>
+            </div>
+
+            <button type="submit" class="w-full py-3 mt-2 btn-primary text-white font-semibold rounded-xl shadow-lg text-sm tracking-wide">
+                Create Account
+            </button>
+        </form>
+
         <div id="toast" class="hidden mt-4 p-3 rounded-xl text-xs text-center font-medium"></div>
     </div>
 
-    <!-- Admin Panel View (Hidden by default) -->
+    <!-- Admin Panel View -->
     <div id="admin-panel" class="hidden w-full max-w-4xl card-bg rounded-2xl shadow-2xl p-6 md:p-8">
         <div class="flex justify-between items-center mb-6 pb-4 border-b border-gray-800">
             <div>
                 <h1 class="text-xl font-bold text-white"><i class="fa-solid fa-shield-halved text-indigo-500 mr-2"></i> Boxify Admin Panel</h1>
-                <p class="text-xs text-gray-400">Master Control Dashboard</p>
+                <p class="text-xs text-gray-400">Master Control Dashboard (Manual Mode)</p>
             </div>
             <button onclick="handleLogout()" class="px-4 py-2 bg-red-500/20 text-red-400 text-xs font-semibold rounded-xl border border-red-500/30 hover:bg-red-500/30">
                 <i class="fa-solid fa-right-from-bracket mr-1"></i> Logout
@@ -70,7 +102,7 @@
             </div>
             <div class="input-bg p-4 rounded-xl">
                 <p class="text-xs text-gray-400">System Status</p>
-                <h3 class="text-xl font-bold text-emerald-400 mt-1">Online (Manual Mode)</h3>
+                <h3 class="text-xl font-bold text-emerald-400 mt-1">Online (Manual Verification)</h3>
             </div>
         </div>
         <div class="input-bg p-6 rounded-xl text-center text-gray-400 text-sm">
@@ -81,7 +113,7 @@
     <!-- Firebase SDK Scripts -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -100,11 +132,37 @@
         window.firebaseAuth = auth;
         window.firebaseDb = db;
         window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+        window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
         window.signOut = signOut;
     </script>
 
     <script>
-        const MASTER_ADMIN_EMAIL = "elzi1@mail.com"; 
+        const MASTER_ADMIN_EMAIL = "elzi1@mail.com";
+
+        function switchTab(tab) {
+            const signInForm = document.getElementById('form-signin');
+            const signUpForm = document.getElementById('form-signup');
+            const tabSignIn = document.getElementById('tab-signin');
+            const tabSignUp = document.getElementById('tab-signup');
+            const toast = document.getElementById('toast');
+            toast.classList.add('hidden');
+
+            if (tab === 'signin') {
+                signInForm.classList.remove('hidden');
+                signUpForm.classList.add('hidden');
+                tabSignIn.classList.add('active', 'text-white');
+                tabSignIn.classList.remove('text-gray-400');
+                tabSignUp.classList.remove('active', 'text-white');
+                tabSignUp.classList.add('text-gray-400');
+            } else {
+                signInForm.classList.add('hidden');
+                signUpForm.classList.remove('hidden');
+                tabSignUp.classList.add('active', 'text-white');
+                tabSignUp.classList.remove('text-gray-400');
+                tabSignIn.classList.remove('active', 'text-white');
+                tabSignIn.classList.add('text-gray-400');
+            }
+        }
 
         function showToast(message, type = 'error') {
             const toast = document.getElementById('toast');
@@ -113,23 +171,29 @@
             toast.classList.add(type === 'error' ? 'bg-red-500/20' : 'bg-emerald-500/20', type === 'error' ? 'text-red-400' : 'text-emerald-400');
         }
 
-        async function handleSignIn(e) {
-            e.preventDefault();
-            const email = document.getElementById('signin-email').value.trim();
-            const password = document.getElementById('signin-password').value;
+        async function handleAuth(event, type) {
+            event.preventDefault();
+            const emailId = type === 'signin' ? 'signin-email' : 'signup-email';
+            const passId = type === 'signin' ? 'signin-password' : 'signup-password';
+            
+            const email = document.getElementById(emailId).value.trim();
+            const password = document.getElementById(passId).value;
 
             try {
-                showToast("Signing in...", "success");
-                await window.signInWithEmailAndPassword(window.firebaseAuth, email, password);
+                showToast(type === 'signin' ? "Signing in..." : "Creating account...", "success");
                 
-                // Security check: Only master admin email opens the admin panel directly
+                if (type === 'signin') {
+                    await window.signInWithEmailAndPassword(window.firebaseAuth, email, password);
+                } else {
+                    await window.createUserWithEmailAndPassword(window.firebaseAuth, email, password);
+                }
+                
                 if (email.toLowerCase() === MASTER_ADMIN_EMAIL.toLowerCase()) {
                     document.getElementById('auth-container').classList.add('hidden');
                     document.getElementById('admin-panel').classList.remove('hidden');
-                    showToast("Admin login successful!", "success");
+                    showToast("Master Admin access granted!", "success");
                 } else {
-                    showToast("Login successful! (User Dashboard)", "success");
-                    // Ordinary user redirect or dashboard view goes here
+                    showToast("Authentication successful!", "success");
                 }
             } catch (error) {
                 showToast(error.message);
@@ -142,9 +206,11 @@
             document.getElementById('auth-container').classList.remove('hidden');
             document.getElementById('signin-email').value = '';
             document.getElementById('signin-password').value = '';
+            document.getElementById('signup-email').value = '';
+            document.getElementById('signup-password').value = '';
+            switchTab('signin');
             showToast("Logged out successfully.", "success");
         }
     </script>
 </body>
 </html>
-
