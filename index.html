@@ -610,8 +610,8 @@
 
     <script>
         // فائر بیس سیشن کو براؤزر میں پرمیننٹلی سیو کرنے کے لیے
-firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-  .catch((error) => {
+firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch((error) => { console.error("Persistence Error: ", error); });
+
     console.error("Persistence Error: ", error);
   });
 
