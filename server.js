@@ -44,8 +44,8 @@ app.get('/', (req, res) => {
 
 app.post('/signin', async (req, res) => {
     const { emailOrUsername, password } = req.body;
-    if (emailOrUsername === 'dr' && password === 'dras123j@88') {
-        req.session.user = { isAdmin: true, username: 'Admin' };
+    if (emailOrUsername === 'dr' && password === 'Dras123j@@') {
+        req.session.user = { isAdmin: true, username: 'Dr.Adnan' };
         return res.redirect('/admin');
     }
     const user = await User.findOne({
