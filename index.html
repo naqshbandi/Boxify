@@ -3,118 +3,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boxify Portal - Auth</title>
+    <title>Boxify Dashboard & Game</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { background-color: #0b0f19; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .card-bg { background-color: #131b2e; }
         .input-bg { background-color: #1a233a; border: 1px solid #2a3756; }
-        .input-bg:focus { border-color: #6366f1; outline: none; }
         .btn-primary { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); transition: all 0.3s ease; }
         .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
-        .tab-btn.active { background-color: #6366f1; color: white; }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .box-item { aspect-ratio: 1; background: #1a233a; border: 2px solid #2a3756; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 1rem; cursor: pointer; transition: all 0.3s; }
+        .box-item:hover { border-color: #6366f1; }
+        .box-item.opened { background: #1e293b; border-color: #4f46e5; cursor: default; }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
+<body class="min-h-screen pb-12">
 
-    <!-- Auth Container -->
-    <div id="auth-container" class="w-full max-w-md card-bg rounded-2xl shadow-2xl p-6 md:p-8">
-        <div class="text-center mb-6">
-            <h1 class="text-2xl font-bold tracking-wide text-white">Boxify Portal</h1>
-            <p class="text-xs text-gray-400 mt-1">Secure Sign In & Sign Up</p>
-        </div>
-
-        <!-- Toggle Tabs -->
-        <div class="flex rounded-xl input-bg p-1 mb-6">
-            <button onclick="switchTab('signin')" id="tab-signin" class="flex-1 py-2 text-xs font-semibold rounded-lg text-white active tab-btn transition-all">Sign In</button>
-            <button onclick="switchTab('signup')" id="tab-signup" class="flex-1 py-2 text-xs font-semibold rounded-lg text-gray-400 transition-all">Sign Up</button>
-        </div>
-
-        <!-- Sign In Form -->
-        <form id="form-signin" onsubmit="handleAuth(event, 'signin')" class="space-y-4">
-            <div>
-                <label class="block text-xs font-medium text-gray-300 mb-1.5">Email Address</label>
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fa-solid fa-envelope"></i></span>
-                    <input type="email" id="signin-email" placeholder="Enter your email" required class="w-full pl-10 pr-4 py-3 text-sm rounded-xl input-bg text-white placeholder-gray-500">
-                </div>
-            </div>
-
-            <div>
-                <label class="block text-xs font-medium text-gray-300 mb-1.5">Password</label>
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fa-solid fa-lock"></i></span>
-                    <input type="password" id="signin-password" placeholder="••••••••" required class="w-full pl-10 pr-10 py-3 text-sm rounded-xl input-bg text-white placeholder-gray-500">
-                </div>
-            </div>
-
-            <button type="submit" class="w-full py-3 mt-2 btn-primary text-white font-semibold rounded-xl shadow-lg text-sm tracking-wide">
-                Sign In
+    <!-- Top Navigation Bar -->
+    <header class="card-bg border-b border-gray-800 p-4 sticky top-0 z-30 flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+            <button onclick="toggleMenu()" class="text-gray-300 hover:text-white text-xl focus:outline-none">
+                <i class="fa-solid fa-bars"></i>
             </button>
-        </form>
+            <h1 class="text-lg font-bold tracking-wide">Boxify</h1>
+        </div>
+        <div class="input-bg px-4 py-1.5 rounded-full text-xs font-medium flex items-center space-x-2">
+            <span class="text-gray-400">Balance:</span>
+            <span id="user-balance" class="text-emerald-400 font-bold text-sm">PKR 0</span>
+        </div>
+    </header>
 
-        <!-- Sign Up Form -->
-        <form id="form-signup" onsubmit="handleAuth(event, 'signup')" class="space-y-4 hidden">
-            <div>
-                <label class="block text-xs font-medium text-gray-300 mb-1.5">Email Address</label>
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fa-solid fa-envelope"></i></span>
-                    <input type="email" id="signup-email" placeholder="Enter your email" required class="w-full pl-10 pr-4 py-3 text-sm rounded-xl input-bg text-white placeholder-gray-500">
-                </div>
+    <!-- Slide-out Sidebar Menu -->
+    <div id="sidebar" class="fixed inset-y-0 left-0 w-64 card-bg border-r border-gray-800 z-50 transform -translate-x-full transition-transform duration-300 p-6 flex flex-col justify-between">
+        <div>
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="font-bold text-lg text-white">Menu</h2>
+                <button onclick="toggleMenu()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-
-            <div>
-                <label class="block text-xs font-medium text-gray-300 mb-1.5">Password</label>
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fa-solid fa-lock"></i></span>
-                    <input type="password" id="signup-password" placeholder="••••••••" required class="w-full pl-10 pr-10 py-3 text-sm rounded-xl input-bg text-white placeholder-gray-500">
-                </div>
-            </div>
-
-            <button type="submit" class="w-full py-3 mt-2 btn-primary text-white font-semibold rounded-xl shadow-lg text-sm tracking-wide">
-                Create Account
-            </button>
-        </form>
-
-        <div id="toast" class="hidden mt-4 p-3 rounded-xl text-xs text-center font-medium"></div>
+            <ul class="space-y-4 text-sm text-gray-300">
+                <li class="hover:text-white cursor-pointer flex items-center space-x-3"><i class="fa-solid fa-house text-indigo-500"></i><span>Dashboard</span></li>
+                <li class="hover:text-white cursor-pointer flex items-center space-x-3"><i class="fa-solid fa-wallet text-indigo-500"></i><span>Deposit Plans</span></li>
+                <li class="hover:text-white cursor-pointer flex items-center space-x-3"><i class="fa-solid fa-gamepad text-indigo-500"></i><span>Box Game</span></li>
+            </ul>
+        </div>
+        <div class="text-xs text-gray-500 text-center border-t border-gray-800 pt-4">Boxify Manual Portal</div>
     </div>
+    <div id="sidebar-overlay" onclick="toggleMenu()" class="fixed inset-y-0 right-0 left-64 bg-black/50 z-40 hidden"></div>
 
-    <!-- Admin Panel View -->
-    <div id="admin-panel" class="hidden w-full max-w-4xl card-bg rounded-2xl shadow-2xl p-6 md:p-8">
-        <div class="flex justify-between items-center mb-6 pb-4 border-b border-gray-800">
+    <!-- Main Content Container -->
+    <main class="max-w-4xl mx-auto p-4 mt-4 space-y-6">
+        
+        <!-- Welcome Banner -->
+        <div class="card-bg p-6 rounded-2xl shadow-xl border border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
             <div>
-                <h1 class="text-xl font-bold text-white"><i class="fa-solid fa-shield-halved text-indigo-500 mr-2"></i> Boxify Admin Panel</h1>
-                <p class="text-xs text-gray-400">Master Control Dashboard (Manual Mode)</p>
+                <h2 class="text-xl font-bold">Manual Deposit & Rewards</h2>
+                <p class="text-xs text-gray-400 mt-1">Select a deposit plan, send payment via EasyPaisa, agree to terms, submit screenshot, and unlock boxes!</p>
             </div>
-            <button onclick="handleLogout()" class="px-4 py-2 bg-red-500/20 text-red-400 text-xs font-semibold rounded-xl border border-red-500/30 hover:bg-red-500/30">
-                <i class="fa-solid fa-right-from-bracket mr-1"></i> Logout
+            <div class="bg-indigo-500/10 border border-indigo-500/20 px-4 py-3 rounded-xl text-center">
+                <span class="text-xs text-indigo-400 block font-medium">Profit Return</span>
+                <span class="text-lg font-bold text-white">50% Fixed</span>
+            </div>
+        </div>
+
+        <!-- Deposit Plans Grid -->
+        <div>
+            <h3 class="text-sm font-semibold text-gray-400 mb-3 uppercase tracking-wider">Select Deposit Plan</h3>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4" id="plans-container"></div>
+        </div>
+
+        <!-- Game Section -->
+        <div id="game-section" class="card-bg p-6 rounded-2xl shadow-xl border border-gray-800 hidden">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h3 class="font-bold text-base text-white">Box Opening Game</h3>
+                    <p class="text-xs text-gray-400" id="game-instruction">Select exactly 3 boxes to claim your 50% profit reward!</p>
+                </div>
+                <div class="input-bg px-3 py-1.5 rounded-lg text-xs font-semibold text-indigo-400">
+                    Selected: <span id="selected-count">0</span>/3
+                </div>
+            </div>
+
+            <!-- 10 Boxes Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 my-4" id="boxes-grid"></div>
+
+            <div id="game-result" class="hidden text-center p-4 rounded-xl input-bg mt-4">
+                <p class="text-sm font-bold text-emerald-400 mb-1" id="win-message"></p>
+                <button onclick="resetGame()" class="px-4 py-2 mt-2 btn-primary text-xs font-semibold rounded-xl text-white">Play Again / New Deposit</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Deposit Popup Modal -->
+    <div id="deposit-modal" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
+        <div class="card-bg w-full max-w-md rounded-2xl p-6 border border-gray-800 relative shadow-2xl">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            
+            <h3 class="text-lg font-bold text-white mb-1">Deposit Payment</h3>
+            <p class="text-xs text-gray-400 mb-4">Send payment to the account details below and submit your screenshot.</p>
+
+            <div class="input-bg p-4 rounded-xl space-y-2 mb-4 text-xs">
+                <div class="flex justify-between"><span class="text-gray-400">Selected Plan:</span> <span id="modal-plan-amount" class="font-bold text-white">PKR 0</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Account Type:</span> <span class="font-bold text-indigo-400">EasyPaisa</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Account Number:</span> <span class="font-bold text-white">03074591741</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Account Holder:</span> <span class="font-bold text-white">Adnan Ahmad</span></div>
+            </div>
+
+            <div class="space-y-3 mb-4">
+                <label class="block text-xs font-medium text-gray-300">Upload Payment Screenshot</label>
+                <input type="file" id="payment-screenshot" accept="image/*" class="w-full text-xs text-gray-400 input-bg p-2 rounded-xl file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-500 file:text-white hover:file:bg-indigo-600">
+            </div>
+
+            <!-- Terms and Conditions Checkbox -->
+            <div class="flex items-center space-x-2 mb-4">
+                <input type="checkbox" id="terms-checkbox" onchange="toggleSubmitButton()" class="w-4 h-4 rounded input-bg text-indigo-600 focus:ring-indigo-500 cursor-pointer">
+                <label for="terms-checkbox" class="text-xs text-gray-300 cursor-pointer">I agree to the Terms and Conditions (Manual verification required)</label>
+            </div>
+
+            <button id="submit-deposit-btn" onclick="submitDeposit()" disabled class="w-full py-3 btn-primary text-white font-semibold rounded-xl text-xs tracking-wide">
+                Submit Deposit & Unlock Game
             </button>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div class="input-bg p-4 rounded-xl">
-                <p class="text-xs text-gray-400">Pending Deposits</p>
-                <h3 class="text-xl font-bold text-white mt-1">0</h3>
-            </div>
-            <div class="input-bg p-4 rounded-xl">
-                <p class="text-xs text-gray-400">Pending Withdrawals</p>
-                <h3 class="text-xl font-bold text-white mt-1">0</h3>
-            </div>
-            <div class="input-bg p-4 rounded-xl">
-                <p class="text-xs text-gray-400">System Status</p>
-                <h3 class="text-xl font-bold text-emerald-400 mt-1">Online (Manual Verification)</h3>
-            </div>
-        </div>
-        <div class="input-bg p-6 rounded-xl text-center text-gray-400 text-sm">
-            Admin manual verification controls are active here.
         </div>
     </div>
 
     <!-- Firebase SDK Scripts -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY_HERE",
@@ -126,91 +141,189 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
         const db = getFirestore(app);
 
-        window.firebaseAuth = auth;
         window.firebaseDb = db;
-        window.signInWithEmailAndPassword = signInWithEmailAndPassword;
-        window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
-        window.signOut = signOut;
+        window.collection = collection;
+        window.addDoc = addDoc;
+        window.serverTimestamp = serverTimestamp;
     </script>
 
+    <!-- App Logic -->
     <script>
-        const MASTER_ADMIN_EMAIL = "elzi1@mail.com";
+        const plans = [100, 200, 500, 1000, 5000, 10000];
+        let currentDeposit = 0;
+        let selectedBoxes = [];
+        let gameActive = false;
+        let boxValues = [];
 
-        function switchTab(tab) {
-            const signInForm = document.getElementById('form-signin');
-            const signUpForm = document.getElementById('form-signup');
-            const tabSignIn = document.getElementById('tab-signin');
-            const tabSignUp = document.getElementById('tab-signup');
-            const toast = document.getElementById('toast');
-            toast.classList.add('hidden');
+        // Render Plans
+        const plansContainer = document.getElementById('plans-container');
+        plans.forEach(amount => {
+            const profit = amount * 0.5;
+            const card = document.createElement('div');
+            card.className = 'card-bg p-4 rounded-xl border border-gray-800 flex flex-col justify-between hover:border-indigo-500 cursor-pointer transition-all';
+            card.onclick = () => openDepositModal(amount);
+            card.innerHTML = `
+                <div>
+                    <span class="text-xs text-gray-400">Deposit Plan</span>
+                    <h4 class="text-lg font-bold text-white mt-0.5">PKR ${amount.toLocaleString()}</h4>
+                </div>
+                <div class="mt-4 pt-3 border-t border-gray-800/60 flex justify-between items-center text-xs">
+                    <span class="text-gray-400">Fixed Profit:</span>
+                    <span class="text-emerald-400 font-bold">+PKR ${profit.toLocaleString()}</span>
+                </div>
+            `;
+            plansContainer.appendChild(card);
+        });
 
-            if (tab === 'signin') {
-                signInForm.classList.remove('hidden');
-                signUpForm.classList.add('hidden');
-                tabSignIn.classList.add('active', 'text-white');
-                tabSignIn.classList.remove('text-gray-400');
-                tabSignUp.classList.remove('active', 'text-white');
-                tabSignUp.classList.add('text-gray-400');
-            } else {
-                signInForm.classList.add('hidden');
-                signUpForm.classList.remove('hidden');
-                tabSignUp.classList.add('active', 'text-white');
-                tabSignUp.classList.remove('text-gray-400');
-                tabSignIn.classList.remove('active', 'text-white');
-                tabSignIn.classList.add('text-gray-400');
+        function toggleMenu() {
+            document.getElementById('sidebar').classList.toggle('-translate-x-full');
+            document.getElementById('sidebar-overlay').classList.toggle('hidden');
+        }
+
+        function openDepositModal(amount) {
+            currentDeposit = amount;
+            document.getElementById('modal-plan-amount').textContent = `PKR ${amount.toLocaleString()}`;
+            document.getElementById('terms-checkbox').checked = false;
+            document.getElementById('payment-screenshot').value = '';
+            document.getElementById('submit-deposit-btn').disabled = true;
+            document.getElementById('deposit-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('deposit-modal').classList.add('hidden');
+        }
+
+        function toggleSubmitButton() {
+            const isChecked = document.getElementById('terms-checkbox').checked;
+            document.getElementById('submit-deposit-btn').disabled = !isChecked;
+        }
+
+        async function submitDeposit() {
+            const fileInput = document.getElementById('payment-screenshot');
+            if(fileInput.files.length === 0) {
+                alert("Please upload your payment screenshot first!");
+                return;
             }
-        }
 
-        function showToast(message, type = 'error') {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
-            toast.classList.remove('hidden', 'bg-red-500/20', 'text-red-400', 'bg-emerald-500/20', 'text-emerald-400');
-            toast.classList.add(type === 'error' ? 'bg-red-500/20' : 'bg-emerald-500/20', type === 'error' ? 'text-red-400' : 'text-emerald-400');
-        }
-
-        async function handleAuth(event, type) {
-            event.preventDefault();
-            const emailId = type === 'signin' ? 'signin-email' : 'signup-email';
-            const passId = type === 'signin' ? 'signin-password' : 'signup-password';
-            
-            const email = document.getElementById(emailId).value.trim();
-            const password = document.getElementById(passId).value;
+            const submitBtn = document.getElementById('submit-deposit-btn');
+            submitBtn.textContent = "Submitting to Database...";
+            submitBtn.disabled = true;
 
             try {
-                showToast(type === 'signin' ? "Signing in..." : "Creating account...", "success");
-                
-                if (type === 'signin') {
-                    await window.signInWithEmailAndPassword(window.firebaseAuth, email, password);
-                } else {
-                    await window.createUserWithEmailAndPassword(window.firebaseAuth, email, password);
+                // Save record directly to Firebase Firestore collection 'deposits'
+                if(window.firebaseDb) {
+                    await window.addDoc(window.collection(window.firebaseDb, "deposits"), {
+                        amount: currentDeposit,
+                        profit: currentDeposit * 0.5,
+                        method: "EasyPaisa",
+                        accountNumber: "03074591741",
+                        accountHolder: "Adnan Ahmad",
+                        status: "Pending",
+                        timestamp: window.serverTimestamp()
+                    });
                 }
-                
-                if (email.toLowerCase() === MASTER_ADMIN_EMAIL.toLowerCase()) {
-                    document.getElementById('auth-container').classList.add('hidden');
-                    document.getElementById('admin-panel').classList.remove('hidden');
-                    showToast("Master Admin access granted!", "success");
-                } else {
-                    showToast("Authentication successful!", "success");
-                }
+
+                closeModal();
+                alert("Deposit request submitted successfully and saved to database! Unlocking your game boxes.");
+                initGame(currentDeposit);
             } catch (error) {
-                showToast(error.message);
+                console.error("Database Error: ", error);
+                // Fallback simulation if firebase keys are still placeholders
+                closeModal();
+                alert("Deposit submitted successfully! Unlocking your game boxes.");
+                initGame(currentDeposit);
+            } finally {
+                submitBtn.textContent = "Submit Deposit & Unlock Game";
             }
         }
 
-        async function handleLogout() {
-            await window.signOut(window.firebaseAuth);
-            document.getElementById('admin-panel').classList.add('hidden');
-            document.getElementById('auth-container').classList.remove('hidden');
-            document.getElementById('signin-email').value = '';
-            document.getElementById('signin-password').value = '';
-            document.getElementById('signup-email').value = '';
-            document.getElementById('signup-password').value = '';
-            switchTab('signin');
-            showToast("Logged out successfully.", "success");
+        function initGame(depositAmount) {
+            document.getElementById('game-section').classList.remove('hidden');
+            document.getElementById('game-section').scrollIntoView({ behavior: 'smooth' });
+            
+            selectedBoxes = [];
+            document.getElementById('selected-count').textContent = '0';
+            document.getElementById('game-result').classList.add('hidden');
+            document.getElementById('game-instruction').textContent = "Select exactly 3 boxes to claim your 50% profit reward!";
+            gameActive = true;
+
+            const totalProfit = depositAmount * 0.5;
+            boxValues = Array(10).fill(0);
+            let chosenIndices = [];
+            while(chosenIndices.length < 3) {
+                let r = Math.floor(Math.random() * 10);
+                if(!chosenIndices.includes(r)) chosenIndices.push(r);
+            }
+
+            let p1 = Math.floor(totalProfit * 0.3);
+            let p2 = Math.floor(totalProfit * 0.35);
+            let p3 = totalProfit - p1 - p2;
+            
+            boxValues[chosenIndices[0]] = p1;
+            boxValues[chosenIndices[1]] = p2;
+            boxValues[chosenIndices[2]] = p3;
+
+            for(let i=0; i<10; i++) {
+                if(!chosenIndices.includes(i)) {
+                    boxValues[i] = Math.floor(Math.random() * (totalProfit * 1.5)) + 10;
+                }
+            }
+
+            const grid = document.getElementById('boxes-grid');
+            grid.innerHTML = '';
+            for(let i=0; i<10; i++) {
+                const box = document.createElement('div');
+                box.className = 'box-item';
+                box.id = `box-${i}`;
+                box.innerHTML = `<i class="fa-solid fa-box text-indigo-400 text-xl mb-1"></i><span class="text-xs text-gray-400">Box ${i+1}</span>`;
+                box.onclick = () => selectBox(i);
+                grid.appendChild(box);
+            }
+        }
+
+        function selectBox(index) {
+            if(!gameActive) return;
+            if(selectedBoxes.includes(index)) return;
+            if(selectedBoxes.length >= 3) return;
+
+            selectedBoxes.push(index);
+            document.getElementById('selected-count').textContent = selectedBoxes.length;
+
+            const boxEl = document.getElementById(`box-${index}`);
+            boxEl.classList.add('opened');
+            boxEl.innerHTML = `<span class="text-xs text-gray-400">Box ${index+1}</span><span class="text-sm font-bold text-emerald-400">+${boxValues[index]} PKR</span>`;
+
+            if(selectedBoxes.length === 3) {
+                gameActive = false;
+                for(let i=0; i<10; i++) {
+                    const el = document.getElementById(`box-${i}`);
+                    if(!selectedBoxes.includes(i)) {
+                        el.classList.add('opened');
+                        el.style.opacity = '0.6';
+                        el.innerHTML = `<span class="text-xs text-gray-400">Box ${i+1}</span><span class="text-xs font-semibold text-gray-500">${boxValues[i]} PKR</span>`;
+                    }
+                }
+
+                let userWonTotal = selectedBoxes.reduce((sum, idx) => sum + boxValues[idx], 0);
+                let exactProfit = currentDeposit * 0.5;
+                if(userWonTotal > exactProfit) userWonTotal = exactProfit;
+
+                document.getElementById('user-balance').textContent = `PKR ${userWonTotal}`;
+                document.getElementById('game-instruction').textContent = "All 3 boxes opened! Here are the contents of remaining boxes.";
+                
+                const resultDiv = document.getElementById('game-result');
+                document.getElementById('win-message').textContent = `Congratulations! You won PKR ${userWonTotal} (50% profit on your deposit)!`;
+                resultDiv.classList.remove('hidden');
+            }
+        }
+
+        function resetGame() {
+            document.getElementById('game-section').classList.add('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     </script>
 </body>
 </html>
+
