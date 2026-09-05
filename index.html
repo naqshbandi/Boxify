@@ -3,16 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boxify - Professional Earning Platform</title>
+    <title>Boxify Gift</title>
+   
+    const firebaseConfig = {
+  apiKey: "AIzaSyAZTA87zhyJRHaCIKVDEG36E9wLR-Qnt80",
+  authDomain: "boxifyapp-6f63f.firebaseapp.com",
+  projectId: "boxifyapp-6f63f",
+  storageBucket: "boxifyapp-6f63f.firebasestorage.app",
+  messagingSenderId: "845814985925",
+  appId: "1:845814985925:web:b7583e2feed78b4ea82cac"
+};
     <style>
         :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
+            --primary-color: #6366f1;
             --bg-color: #0f172a;
             --card-bg: #1e293b;
             --text-color: #f8fafc;
             --text-muted: #94a3b8;
-            --border-color: #334155;
+            --accent-color: #22c55e;
+            --danger-color: #ef4444;
         }
 
         * {
@@ -28,178 +37,476 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
-            padding: 1rem;
         }
 
         .container {
             width: 100%;
-            max-width: 450px;
-            padding: 2.5rem;
-            background: var(--card-bg);
-            border-radius: 16px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--border-color);
+            max-width: 480px;
+            padding: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
         }
 
-        .brand {
-            font-size: 2.2rem;
-            font-weight: 700;
+        h2 {
             text-align: center;
-            margin-bottom: 1.5rem;
-            background: linear-gradient(to right, #818cf8, #c084fc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            letter-spacing: 1px;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+            color: var(--text-color);
+        }
+
+        h3 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
         }
 
         .form-group {
-            margin-bottom: 1.25rem;
-            position: relative;
+            margin-bottom: 15px;
         }
 
         label {
             display: block;
-            font-size: 0.875rem;
-            margin-bottom: 0.5rem;
+            margin-bottom: 5px;
             color: var(--text-muted);
-            font-weight: 500;
+            font-size: 0.9rem;
         }
 
         input[type="text"],
-        input[type="password"] {
+        input[type="email"],
+        input[type="password"],
+        input[type="file"] {
             width: 100%;
-            padding: 0.75rem 1rem;
-            background: #0f172a;
-            border: 1px solid var(--border-color);
+            padding: 12px;
             border-radius: 8px;
-            color: #fff;
+            border: 1px solid #334155;
+            background-color: #0f172a;
+            color: var(--text-color);
             font-size: 1rem;
-            transition: all 0.3s ease;
         }
 
-        input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-        }
-
-        .show-pass {
-            position: absolute;
-            right: 12px;
-            top: 38px;
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            font-size: 0.875rem;
-            font-weight: 600;
-        }
-
-        .show-pass:hover {
-            color: var(--primary);
-        }
-
-        .btn {
+        button {
             width: 100%;
-            padding: 0.75rem;
-            background: var(--primary);
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            background-color: var(--primary-color);
             color: white;
-            border: none;
-            border-radius: 8px;
             font-size: 1rem;
-            font-weight: 600;
+            font-weight: bold;
             cursor: pointer;
-            transition: background 0.3s ease;
-            margin-top: 0.5rem;
+            transition: background 0.2s;
         }
 
-        .btn:hover {
-            background: var(--primary-dark);
+        button:hover {
+            opacity: 0.9;
         }
 
-        .auth-links {
+        button:disabled {
+            background-color: #334155;
+            cursor: not-allowed;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            background-color: #0f172a;
+            border-radius: 8px;
+            padding: 4px;
+        }
+
+        .tab {
+            flex: 1;
             text-align: center;
-            margin-top: 1.5rem;
-            font-size: 0.875rem;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 6px;
+            font-weight: 600;
             color: var(--text-muted);
         }
 
-        .auth-links a {
-            color: #818cf8;
+        .tab.active {
+            background-color: var(--card-bg);
+            color: var(--text-color);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Dashboard Styles */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .menu-icon {
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .balance-display {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .current-deposit-highlight {
+            font-size: 1.5rem;
+            color: var(--accent-color);
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        /* Boxes Grid */
+        .boxes-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .box {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #4f46e5, #3730a3);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .box:hover {
+            transform: scale(1.05);
+        }
+
+        .box.opened {
+            background: #334155;
+            cursor: default;
+            transform: none;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: -280px;
+            width: 280px;
+            height: 100%;
+            background-color: var(--card-bg);
+            box-shadow: -4px 0 10px rgba(0,0,0,0.5);
+            transition: right 0.3s ease;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .sidebar.open {
+            right: 0;
+        }
+
+        .sidebar-close {
+            font-size: 1.5rem;
+            cursor: pointer;
+            text-align: right;
+            margin-bottom: 20px;
+        }
+
+        .sidebar-menu a {
+            display: block;
+            color: var(--text-color);
             text-decoration: none;
+            padding: 12px 0;
+            border-bottom: 1px solid #334155;
             font-weight: 600;
         }
 
-        .auth-links a:hover {
-            text-decoration: underline;
+        /* Popup Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .live-ticker {
+            background: #0f172a;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1 class="brand">BOXYFY</h1>
-        
-        <form id="signinForm" onsubmit="handleSignIn(event)">
-            <div class="form-group">
-                <label>Email or Username</label>
-                <input type="text" name="emailOrUsername" id="userInput" required placeholder="Enter username or email">
+    <div class="container" id="app">
+        <!-- Auth Section -->
+        <div id="auth-page">
+            <h2>Boxify Gift</h2>
+            <div class="card">
+                <div class="tabs">
+                    <div class="tab active" onclick="switchTab('signin')">Sign In</div>
+                    <div class="tab" onclick="switchTab('signup')">Sign Up</div>
+                </div>
+
+                <!-- Sign In Form -->
+                <form id="signin-form" onsubmit="handleSignIn(event)">
+                    <div class="form-group">
+                        <label>Email or Username</label>
+                        <input type="text" id="signin-email" required placeholder="Enter email or 7Dr-as">
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="signin-password" required placeholder="Enter password">
+                    </div>
+                    <button type="submit">Sign In</button>
+                </form>
+
+                <!-- Sign Up Form -->
+                <form id="signup-form" class="hidden" onsubmit="handleSignUp(event)">
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" id="signup-username" required placeholder="Unique username">
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="signup-email" required placeholder="Unique email">
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="signup-password" required placeholder="Create password">
+                    </div>
+                    <div class="form-group">
+                        <label>Referral Link / Code (Optional)</label>
+                        <input type="text" id="signup-ref" placeholder="Referrer username">
+                    </div>
+                    <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="terms-check" style="width: auto;" onchange="toggleSignUpBtn()">
+                        <label style="font-size: 0.8rem; margin: 0; color: var(--text-color);" for="terms-check">
+                            You are solely responsible for your own profits and losses. Withdrawals must be made within 7 days, otherwise your balance will expire.
+                        </label>
+                    </div>
+                    <button type="submit" id="signup-btn" disabled>Sign Up</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Dashboard Section -->
+        <div id="dashboard-page" class="hidden">
+            <div class="header">
+                <h2>Boxify Gift</h2>
+                <div class="menu-icon" onclick="toggleSidebar()">☰</div>
             </div>
 
-            <div class="form-group">
-                <label>Password</label>
-                <input type="password" name="password" id="passwordInput" required placeholder="••••••••">
-                <button type="button" class="show-pass" onclick="togglePassword()">Show</button>
+            <div class="balance-display card">
+                <h3>Main Balance</h3>
+                <h1 id="user-balance">Rs. 0</h1>
+                <div class="current-deposit-highlight" id="current-deposit-view">Current Deposit: Rs. 0</div>
             </div>
 
-            <button type="submit" class="btn">Sign In</button>
-        </form>
+            <div class="card">
+                <h3>Deposit Instructions</h3>
+                <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 10px;">Bigger the deposit, bigger the reward. Minimum deposit will be Rs. 100.</p>
+                <p style="font-size: 0.9rem;"><strong>EasyPaisa:</strong> <span id="ep-num">03074591741</span> <button onclick="copyToClipboard('03074591741')" style="width: auto; padding: 4px 8px; font-size: 0.8rem; display: inline-block;">Copy</button></p>
+                <p style="font-size: 0.9rem; margin-top: 5px;"><strong>Account Holder:</strong> Adnan Ahmad</p>
+                <button style="margin-top: 15px;" onclick="openDepositModal()">Deposit Now</button>
+            </div>
 
-        <div class="auth-links">
-            Don't have an account? <a href="/signup">Sign Up</a>
+            <div class="card">
+                <h3 style="text-align: center;">You can select any Three Box</h3>
+                <div class="boxes-grid" id="boxes-container">
+                    <!-- Generated via JS -->
+                </div>
+            </div>
+
+            <div class="live-ticker" id="live-ticker">
+                Live Win: User*** won Rs. 50
+            </div>
+        </div>
+
+        <!-- Admin Panel Section -->
+        <div id="admin-page" class="hidden">
+            <div class="header">
+                <h2>Admin Control Panel</h2>
+                <button style="width: auto; padding: 5px 10px; background: var(--danger-color);" onclick="logout()">Logout</button>
+            </div>
+            <div class="card">
+                <h3>Pending Deposits & User Audits</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Manual verification queue for screenshots, balances, and full user overrides.</p>
+                <div id="admin-deposit-list" style="margin-top: 15px;">
+                    <!-- Dynamic List -->
+                    <p style="color: var(--text-muted);">No pending deposits right now.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar Menu -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-close" onclick="toggleSidebar()">✕</div>
+        <div class="sidebar-menu">
+            <a href="#" onclick="navigate('home')">Home</a>
+            <a href="#" onclick="navigate('referrals')">Your Referrals</a>
+            <a href="#" onclick="navigate('withdraw')">Withdraw</a>
+            <a href="#" onclick="navigate('terms')">Term and Conditions</a>
+            <a href="#" onclick="logout()" style="color: var(--danger-color);">Logout</a>
+        </div>
+    </div>
+
+    <!-- Deposit Modal -->
+    <div class="modal hidden" id="deposit-modal">
+        <div class="modal-content">
+            <h3>Send your Deposit proof</h3>
+            <input type="file" id="deposit-screenshot" accept="image/*" style="margin: 15px 0;">
+            <button onclick="submitDeposit()">Submit Proof</button>
+            <button style="background: transparent; color: var(--text-muted); margin-top: 10px;" onclick="closeDepositModal()">Cancel</button>
         </div>
     </div>
 
     <script>
-        function togglePassword() {
-            const passInput = document.getElementById('passwordInput');
-            const btn = document.querySelector('.show-pass');
-            if (passInput.type === 'password') {
-                passInput.type = 'text';
-                btn.textContent = 'Hide';
+        // Core State Simulation & Routing Logic
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            if(tab === 'signin') {
+                document.querySelectorAll('.tab')[0].classList.add('active');
+                document.getElementById('signin-form').classList.remove('hidden');
+                document.getElementById('signup-form').classList.add('hidden');
             } else {
-                passInput.type = 'password';
-                btn.textContent = 'Show';
+                document.querySelectorAll('.tab')[1].classList.add('active');
+                document.getElementById('signup-form').classList.remove('hidden');
+                document.getElementById('signin-form').classList.add('hidden');
             }
         }
 
-        async function handleSignIn(e) {
+        function toggleSignUpBtn() {
+            const checked = document.getElementById('terms-check').checked;
+            document.getElementById('signup-btn').disabled = !checked;
+        }
+
+        function handleSignIn(e) {
             e.preventDefault();
-            const emailOrUsername = document.getElementById('userInput').value;
-            const password = document.getElementById('passwordInput').value;
+            const email = document.getElementById('signin-email').value;
+            if(email === '7Dr-as') {
+                document.getElementById('auth-page').classList.add('hidden');
+                document.getElementById('admin-page').classList.remove('hidden');
+            } else {
+                document.getElementById('auth-page').classList.add('hidden');
+                document.getElementById('dashboard-page').classList.remove('hidden');
+                initGameBoxes();
+            }
+        }
 
-            try {
-                const response = await fetch('/signin', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ emailOrUsername, password })
-                });
+        function handleSignUp(e) {
+            e.preventDefault();
+            alert('Account created successfully! Please sign in.');
+            switchTab('signin');
+        }
 
-                if (response.redirected) {
-                    window.location.href = response.url;
-                } else {
-                    const result = await response.text();
-                    document.open();
-                    document.write(result);
-                    document.close();
+        function logout() {
+            location.reload();
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text);
+            alert('Copied to clipboard: ' + text);
+        }
+
+        function openDepositModal() {
+            document.getElementById('deposit-modal').classList.remove('hidden');
+        }
+
+        function closeDepositModal() {
+            document.getElementById('deposit-modal').classList.add('hidden');
+        }
+
+        function submitDeposit() {
+            closeDepositModal();
+            alert('Your deposit is being verified.');
+        }
+
+        function initGameBoxes() {
+            const container = document.getElementById('boxes-container');
+            container.innerHTML = '';
+            for(let i=1; i<=15; i++) {
+                const box = document.createElement('div');
+                box.className = 'box';
+                box.innerText = '🎁';
+                box.onclick = () => openBox(box, i);
+                container.appendChild(box);
+            }
+        }
+
+        let openedCount = 0;
+        function openBox(element, index) {
+            if(element.classList.contains('opened')) return;
+            if(openedCount >= 3) {
+                alert('You can only select 3 boxes per deposit session.');
+                return;
+            }
+            element.classList.add('opened');
+            element.innerText = 'Rs. ' + (Math.floor(Math.random() * 20) + 10);
+            openedCount++;
+
+            if(openedCount === 3) {
+                setTimeout(() => {
+                    autoRevealRemaining();
+                }, 1000);
+            }
+        }
+
+        function autoRevealRemaining() {
+            const boxes = document.querySelectorAll('.box:not(.opened)');
+            const dummyValues = [0, 50, 10, 100, 500, 1000, 0, 50, 10, 100, 500, 1000];
+            boxes.forEach((box, idx) => {
+                setTimeout(() => {
+                    box.classList.add('opened');
+                    box.innerText = dummyValues[idx] !== undefined ? dummyValues[idx] : '0';
+                    box.style.fontSize = '0.8rem';
+                }, idx * 1000);
+            });
+        }
+
+        function navigate(section) {
+            toggleSidebar();
+            if(section === 'withdraw') {
+                const activeRefs = 0; // Dynamic check mockup
+                if(activeRefs < 5) {
+                    alert('You must complete 5 active referrals who have made a deposit in order to withdraw.');
                 }
-            } catch (err) {
-                console.error(err);
-                alert('Server connection failed.');
+            } else {
+                alert('Navigating to: ' + section);
             }
         }
     </script>
