@@ -418,18 +418,17 @@ const firebaseConfig = {
         }
 
         function handleSignIn(e) {
-            e.preventDefault();
-            const email = document.getElementById('signin-email').value;
-            if(email === '7Dr-as') {
-                document.getElementById('auth-page').classList.add('hidden');
-                document.getElementById('admin-page').classList.remove('hidden');
-            } else {
-                document.getElementById('auth-page').classList.add('hidden');
-                document.getElementById('dashboard-page').classList.remove('hidden');
-                initGameBoxes();
-            }
+    e.preventDefault();
+    const email = document.getElementById('signin-email').value.trim();
+    if(email === '7Dr-as') {
+        document.getElementById('auth-page').classList.add('hidden');
+        document.getElementById('admin-page').classList.remove('hidden');
+    } else {
+        document.getElementById('auth-page').classList.add('hidden');
+        document.getElementById('dashboard-page').classList.remove('hidden');
+        initGameBoxes();
+    }
         }
-
         function handleSignUp(e) {
             e.preventDefault();
             alert('Account created successfully! Please sign in.');
