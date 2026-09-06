@@ -921,6 +921,250 @@ const firebaseConfig = {
   appId: "1:845814985925:web:b7583e2feed78b4ea82cac"
 };
 
+
+// --- 1. یوزر کے لیے ہیلپ چیٹ موڈل (ہر قسم کی تصویر اور زوم کے ساتھ) ---
+function openHelpModal() {
+    const modal = document.getElementById('modal-container');
+    if (!modal) return;
+    
+    // فرض کریں یہ فنکشن آپ کے پروجیکٹ میں لاگ ان یوزر کا نام دیتا ہے
+    const currentUser = typeof getCurrentUser === 'function' ? getCurrentUser() : { username: 'User' };
+    
+    let supportChats = getStorage('DB_SUPPORT_CHATS') || {};
+    let userMessages = supportChats[currentUser.username] || [];
+
+    let messagesHTML = userMessages.map(msg => `
+        <div class="mb-3 ${msg.sender === 'user' ? 'text-right' : 'text-left'}">
+            <div class="inline-block p-3 rounded-xl text-xs max-w-[80%] ${msg.sender === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-gray-100 text-gray-800 rounded-bl-none shadow-sm'}">
+                <p class="break-words">${msg.text || ''}</p>
+                ${msg.image ? `
+                    <div class="mt-2">
+                        <!-- تصویر پر کلک کرنے سے وہ بڑی ونڈو میں کھل کر زوم ہو جائے گی -->
+                        <img src="${msg.image}" class="w-28 h-28 object-cover rounded-lg cursor-pointer border border-white/20 hover:opacity-95 transition" onclick="window.open('${msg.image}', '_blank')" title="Click to open & zoom">
+                    </div>
+                ` : ''}
+            </div>
+        </div>
+    `).join('');
+
+    modal.innerHTML = `
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-2xl max-w-md w-full p-4 flex flex-col h-[480px] shadow-2xl">
+                <!-- ہیڈر -->
+                <div class="flex justify-between items-center border-b pb-3 mb-3">
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                        <h3 class="font-bold text-gray-800 text-sm">Help & Support Center</h3>
+                    </div>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 font-bold text-base px-2">✕</button>
+                </div>
+                
+                <!-- چیٹ کا سکرول ایبل ایریا -->
+                <div id="chat-messages-box" class="flex-1 overflow-y-auto p-2 border border-gray-100 rounded-xl bg-gray-50/50 mb-3 space-y-2">
+                    ${messagesHTML || '<div class="flex flex-col items-center justify-center h-full text-gray-400 text-xs"><p>No messages yet.</p><p class="text-[10px] mt-1">Send your query or payment screenshot here.</p></div>'}
+                </div>
+
+                <!-- ان پٹ، فائل اور سینڈ بٹن (تمام امیج فارمیٹس کے ساتھ) -->
+                <div class="flex flex-col gap-2 pt-2 border-t border-gray-100">
+                    <input type="text" id="help-msg-input" placeholder="Type your message here..." class="border border-gray-200 focus:border-indigo-500 focus:outline-none p-2.5 rounded-xl text-xs w-full bg-gray-50">
+                    
+                    <div class="flex justify-between items-center gap-2">
+                        <!-- accept="image/*" کی وجہ سے ہر قسم کا امیज فارمیٹ (JPG, PNG, WEBP, HEIC وغیرہ) سلیکٹ ہو سکے گا -->
+                        <label class="flex items-center gap-1.5 text-xs text-indigo-600 font-semibold bg-indigo-50 hover:bg-indigo-100 px-3 py-2 rounded-xl cursor-pointer transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span id="file-label-text">Attach Image</span>
+                            <input type="file" id="help-file-input" accept="image/*" class="hidden" onchange="updateFileName(this)">
+                        </label>
+
+                        <button onclick="sendHelpMessage()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl text-xs font-bold transition shadow-sm">
+                            Send Message
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // چیٹ کو ہمیشہ نیچے (آخری میسج پر) اسکرول رکھیں
+    let chatBox = document.getElementById('chat-messages-box');
+    if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+// فائل سلیکٹ ہونے پر نام دکھانے کے لیے چھوٹا فنکشن
+function updateFileName(input) {
+    let label = document.getElementById('file-label-text');
+    if (input.files && input.files[0]) {
+        label.innerText = "Image Attached ✓";
+    } else {
+        label.innerText = "Attach Image";
+    }
+}
+
+// یوزر کا میسج اور تصویر لوکل اسٹوریج میں سیو کرنے کا فنکشن
+function sendHelpMessage() {
+    const currentUser = typeof getCurrentUser === 'function' ? getCurrentUser() : { username: 'User' };
+    const textInput = document.getElementById('help-msg-input').value;
+    const fileInput = document.getElementById('help-file-input');
+
+    if (!textInput && (!fileInput || fileInput.files.length === 0)) return;
+
+    if (fileInput && fileInput.files.length > 0) {
+        let reader = new FileReader();
+        reader.readAsDataURL(fileInput.files[0]);
+        reader.onload = function () {
+            saveMessageToStorage(currentUser.username, textInput, reader.result);
+        };
+    } else {
+        saveMessageToStorage(currentUser.username, textInput, null);
+    }
+}
+
+function saveMessageToStorage(username, text, imageUrl) {
+    let supportChats = getStorage('DB_SUPPORT_CHATS') || {};
+    if (!supportChats[username]) supportChats[username] = [];
+
+    supportChats[username].push({
+        sender: 'user',
+        text: text,
+        image: imageUrl,
+        time: Date.now(),
+        status: 'unread'
+    });
+
+    setStorage('DB_SUPPORT_CHATS', supportChats);
+    openHelpModal();
+}
+
+
+// --- 2. ایڈمن کے لیے چیٹ اور ایکسیپٹ/ریجیکٹ بٹن (صرف ایڈمن پینل میں شو ہوں گے) ---
+function openAdminChat(username) {
+    let supportChats = getStorage('DB_SUPPORT_CHATS') || {};
+    let userMessages = supportChats[username] || [];
+    
+    // ایڈمن کے دیکھنے پر میسجز ریڈ مارک ہو جائیں گے
+    userMessages.forEach(m => { if(m.sender === 'user') m.status = 'read'; });
+    setStorage('DB_SUPPORT_CHATS', supportChats);
+
+    let modal = document.getElementById('modal-container');
+    if (!modal) return;
+
+    let messagesHTML = userMessages.map(msg => `
+        <div class="mb-3 ${msg.sender === 'admin' ? 'text-right' : 'text-left'}">
+            <div class="inline-block p-3 rounded-xl text-xs max-w-[80%] ${msg.sender === 'admin' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-gray-100 text-gray-800 rounded-bl-none shadow-sm'}">
+                <p class="break-words">${msg.text || ''}</p>
+                ${msg.image ? `
+                    <div class="mt-2">
+                        <img src="${msg.image}" class="w-32 h-32 object-cover rounded-lg cursor-pointer border border-white/20 hover:opacity-95 transition" onclick="window.open('${msg.image}', '_blank')" title="Click to zoom screenshot">
+                    </div>
+                ` : ''}
+            </div>
+        </div>
+    `).join('');
+
+    modal.innerHTML = `
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-2xl max-w-lg w-full p-4 flex flex-col h-[520px] shadow-2xl">
+                
+                <!-- ہیڈر: یوزر کا نام اور صرف ایڈمن کے لیے Accept/Reject بٹن -->
+                <div class="flex justify-between items-center border-b pb-3 mb-3">
+                    <div>
+                        <h3 class="font-bold text-gray-800 text-sm">Admin Review: <span class="text-indigo-600">${username}</span></h3>
+                        <p class="text-[10px] text-gray-400">Verify screenshot and manage deposit below</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <!-- یہ دونوں بٹن صرف ایڈمن کو نظر آئیں گے -->
+                        <button onclick="adminAcceptDeposit('${username}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-sm">Accept</button>
+                        <button onclick="adminRejectDeposit('${username}')" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-sm">Reject</button>
+                        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 font-bold ml-2 text-base">✕</button>
+                    </div>
+                </div>
+                
+                <!-- چیٹ کا ہسٹری باکس -->
+                <div class="flex-1 overflow-y-auto p-2 border border-gray-100 rounded-xl bg-gray-50/50 mb-3 space-y-2">
+                    ${messagesHTML || '<p class="text-xs text-center text-gray-400 mt-20">No conversation history found.</p>'}
+                </div>
+
+                <!-- ایڈمن کا ریپلائی باکس -->
+                <div class="flex gap-2 pt-2 border-t border-gray-100">
+                    <input type="text" id="admin-reply-input" placeholder="Type reply to user..." class="border border-gray-200 focus:border-indigo-500 focus:outline-none p-2.5 rounded-xl text-xs flex-1 bg-gray-50">
+                    <button onclick="sendAdminReply('${username}')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-sm">Reply</button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function sendAdminReply(username) {
+    let textInput = document.getElementById('admin-reply-input').value;
+    if (!textInput) return;
+
+    let supportChats = getStorage('DB_SUPPORT_CHATS') || {};
+    if (!supportChats[username]) supportChats[username] = [];
+
+    supportChats[username].push({
+        sender: 'admin',
+        text: textInput,
+        image: null,
+        time: Date.now()
+    });
+
+    setStorage('DB_SUPPORT_CHATS', supportChats);
+    openAdminChat(username);
+}
+
+// ایڈمن جب Accept کرے گا تو اماؤنٹ پوچھ کر یوزر کے بیلنس میں ایڈ کر دے گا
+function adminAcceptDeposit(username) {
+    let users = getStorage(DB_KEYS.USERS) || [];
+    let user = users.find(u => u.username === username);
+
+    if (!user) {
+        alert('User not found in database!');
+        return;
+    }
+
+    let depositAmount = prompt("Enter deposit amount to approve for " + username + ":", "100");
+    if (!depositAmount || isNaN(depositAmount)) return;
+
+    user.balance = (parseFloat(user.balance) || 0) + parseFloat(depositAmount);
+    setStorage(DB_KEYS.USERS, users);
+
+    // چیٹ میں آٹو میسج بھیج دیں
+    let supportChats = getStorage('DB_SUPPORT_CHATS') || {};
+    if (!supportChats[username]) supportChats[username] = [];
+    supportChats[username].push({
+        sender: 'admin',
+        text: 'System Notification: Your deposit of Rs. ' + depositAmount + ' has been approved and added to your balance!',
+        image: null,
+        time: Date.now()
+    });
+    setStorage('DB_SUPPORT_CHATS', supportChats);
+
+    alert('Deposit successfully approved for ' + username);
+    openAdminChat(username);
+}
+
+// ایڈمن جب Reject کرے گا
+function adminRejectDeposit(username) {
+    let reason = prompt("Enter rejection reason (optional):", "Invalid screenshot or payment not received");
+    
+    let supportChats = getStorage('DB_SUPPORT_CHATS') || {};
+    if (!supportChats[username]) supportChats[username] = [];
+
+    supportChats[username].push({
+        sender: 'admin',
+        text: 'System Notification: Your deposit proof has been rejected. Reason: ' + (reason || 'Verification failed'),
+        image: null,
+        time: Date.now()
+    });
+    setStorage('DB_SUPPORT_CHATS', supportChats);
+    
+    alert('Deposit request rejected.');
+    openAdminChat(username);
+}
+
+        
         
     </script>
 </body>
