@@ -418,23 +418,88 @@ const firebaseConfig = {
             document.getElementById('signup-btn').disabled = !checked;
         }
 
-        function handleSignIn(e) {
-    e.preventDefault();
-    const email = document.getElementById('signin-email').value.trim();
-    if(email === '7Dr-as') {
-        document.getElementById('auth-page').classList.add('hidden');
-        document.getElementById('admin-page').classList.remove('hidden');
-    } else {
-        document.getElementById('auth-page').classList.add('hidden');
-        document.getElementById('dashboard-page').classList.remove('hidden');
-        initGameBoxes();
+            function handleSignIn(e) {
+        e.preventDefault();
+        const emailInput = document.getElementById('signin-email').value.trim();
+        const passwordInput = document.getElementById('signin-password').value;
+        
+        // ایڈمن کا خفیہ بائی پاس
+        if(emailInput === '7Dr-as') {
+            document.getElementById('auth-page').classList.add('hidden');
+            document.getElementById('admin-page').classList.remove('hidden');
+            return;
+        }
+
+        // عام یوزر فائر بیس اتھینیکیشن اور سیکیورٹی چیک
+        firebase.auth().signInWithEmailAndPassword(emailInput, passwordInput)
+            .then((userCredential) => {
+                const user = userCredential.user;
+                document.getElementById('auth-page').classList.add('hidden');
+                checkUserDepositAndLock(user.uid);
+            })
+            .catch((error) => {
+                alert('Access Denied: Please sign up first or check your credentials.');
+            });
     }
+
+    function handleSignUp(e) {
+        e.preventDefault();
+        const username = document.getElementById('signup-username').value.trim();
+        const email = document.getElementById('signup-email').value.trim();
+        const password = document.getElementById('signup-password').value;
+        const referral = document.getElementById('signup-ref').value.trim();
+        const termsChecked = document.getElementById('terms-check').checked;
+
+        if (!termsChecked) {
+            alert('You must accept the Terms & Conditions to sign up.');
+            return;
         }
-        function handleSignUp(e) {
-            e.preventDefault();
-            alert('Account created successfully! Please sign in.');
-            switchTab('signin');
-        }
+
+        firebase.auth().createUserWithEmailAndPassword(email, password)
+            .then((userCredential) => {
+                const uid = userCredential.user.uid;
+                db.collection("users").doc(uid).set({
+                    username: username,
+                    email: email,
+                    referral: referral || 'None',
+                    depositApproved: false,
+                    balance: 0,
+                    createdAt: new Date().toISOString()
+                }).then(() => {
+                    alert('Account created successfully! Please sign in.');
+                    switchTab('signin');
+                });
+            })
+            .catch((error) => {
+                alert('Sign Up Error: ' + error.message);
+            });
+    }
+
+    function checkUserDepositAndLock(userId) {
+        db.collection("users").doc(userId).get().then((doc) => {
+            if (doc.exists) {
+                const userData = doc.data();
+                
+                if (userData.depositApproved !== true) {
+                    document.getElementById('auth-page').classList.add('hidden');
+                    alert('Your deposit is pending admin approval. Please wait for admin approval.');
+                    return;
+                }
+
+                document.getElementById('auth-page').classList.add('hidden');
+                document.getElementById('dashboard-page').classList.remove('hidden');
+                
+                if (typeof initGameBoxes === 'function') {
+                    initGameBoxes();
+                }
+            } else {
+                alert('User profile not found in database.');
+            }
+        }).catch((error) => {
+            console.error("Error checking deposit status:", error);
+        });
+    }
+
 
         function logout() {
             location.reload();
@@ -467,7 +532,7 @@ const firebaseConfig = {
             container.innerHTML = '';
             for(let i=1; i<=15; i++) {
                 const box = document.createElement('div');
-                box.className = 'box';
+                box.className = 'box';⁷
                 box.innerText = '🎁';
                 box.onclick = () => openBox(box, i);
                 container.appendChild(box);
