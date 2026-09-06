@@ -418,29 +418,36 @@ const firebaseConfig = {
             document.getElementById('signup-btn').disabled = !checked;
         }
 
-            function handleSignIn(e) {
+                function handleSignIn(e) {
         e.preventDefault();
-        const emailInput = document.getElementById('signin-email').value.trim();
+        
+        const loginInput = document.getElementById('signin-email').value.trim();
         const passwordInput = document.getElementById('signin-password').value;
         
-        // ایڈمن کا خفیہ بائی پاس
-        if(emailInput === '7Dr-as') {
+        // صرف ایڈمن کے لیے بائی پاس (بغیر پاسورڈ کے سیدھا ایڈمن پینل)
+        if (loginInput === '7Dr-as') {
             document.getElementById('auth-page').classList.add('hidden');
-            document.getElementById('admin-page').classList.remove('hidden');
+            const adminPage = document.getElementById('admin-page');
+            if (adminPage) {
+                adminPage.classList.remove('hidden');
+            } else {
+                alert('Admin panel not found.');
+            }
             return;
         }
 
-        // عام یوزر فائر بیس اتھینیکیشن اور سیکیورٹی چیک
-        firebase.auth().signInWithEmailAndPassword(emailInput, passwordInput)
+        // عام یوزرز کے لیے فائر بیس لاگ ان
+        firebase.auth().signInWithEmailAndPassword(loginInput, passwordInput)
             .then((userCredential) => {
                 const user = userCredential.user;
                 document.getElementById('auth-page').classList.add('hidden');
                 checkUserDepositAndLock(user.uid);
             })
             .catch((error) => {
-                alert('Access Denied: Please sign up first or check your credentials.');
+                alert('Access Denied: Please check your credentials or sign up first.');
             });
     }
+
 
     function handleSignUp(e) {
         e.preventDefault();
