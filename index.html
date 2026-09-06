@@ -1344,51 +1344,7 @@ function closeModal() {
 }
    
 
-// 1. جب ایڈمن نیا ڈپازٹ اپروو کرے گا، تب گیم صرف ایک بار کے لیے انلاک ہوگی
-function approveUserDeposit(username) {
-    let dbUsers = JSON.parse(localStorage.getItem('DB_USERS')) || {};
-    
-    if (dbUsers[username]) {
-        dbUsers[username].hasPlayed = false; // نیا ڈپازٹ آنے پر گیم انلاک کر دی گئی
-        localStorage.setItem('DB_USERS', JSON.stringify(dbUsers));
-    }
 
-    let currentUser = JSON.parse(localStorage.getItem('current_user'));
-    if (currentUser && currentUser.username === username) {
-        currentUser.hasPlayed = false;
-        localStorage.setItem('current_user', JSON.stringify(currentUser));
-    }
-}
-
-// 2. جب یوزر باکس پر کلک کرے گا
-function handleBoxClick(boxIndex) {
-    let currentUser = JSON.parse(localStorage.getItem('current_user'));
-    
-    // اگر وہ اس ڈپازٹ پر پہلے ہی کھیل چکا ہے، تو باکس نہیں کھلیں گے اور پاپ اپ آئے گا
-    if (currentUser && currentUser.hasPlayed === true) {
-        alert("You have already played using this deposit. Please make a new deposit to play again.");
-        return;
-    }
-
-    // --- یہاں آپ کا باکس کھولنے والا پرانا اور اصل کوڈ آئے گا ---
-    console.log("Game played successfully!");
-
-    // جیسے ہی ایک بار کھیل لے گا، فورا لاک کر دیا جائے گا
-    if (currentUser) {
-        currentUser.hasPlayed = true;
-        localStorage.setItem('current_user', JSON.stringify(currentUser));
-
-        // مین ڈیٹا بیس میں بھی فلیگ سیવ کر دیا جائے گا
-        try {
-            let dbUsers = JSON.parse(localStorage.getItem('DB_USERS')) || {};
-            if (dbUsers[currentUser.username]) {
-                dbUsers[currentUser.username].hasPlayed = true;
-                localStorage.setItem('DB_USERS', JSON.stringify(dbUsers));
-            }
-        } catch (e) {
-            console.error("Database update error", e);
-        }
-    }
 }
 
         
