@@ -28,6 +28,7 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
+        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
     </style>
 </head>
 <body class="bg-jasper-50 text-jasper-950 min-h-screen flex flex-col antialiased">
@@ -40,36 +41,29 @@
 
     <script>
         /* ==========================================================
-           STORAGE SCHEMAS & INITIALIZATION
+           DATA STORE & MOCK DATABASE INITIALIZATION
            ================================================---------- */
         const DB_KEYS = {
-            USERS: 'boxify_users_v2',
-            SESSION: 'boxify_session_v2',
-            DEPOSITS: 'boxify_deposits_v2',
-            WITHDRAWALS: 'boxify_withdrawals_v2',
-            LIVE_FEED: 'boxify_live_feed_v2'
+            USERS: 'boxify_users_v1',
+            SESSION: 'boxify_session_v1',
+            DEPOSITS: 'boxify_deposits_v1',
+            WITHDRAWALS: 'boxify_withdrawals_v1',
+            LIVE_FEED: 'boxify_live_feed_v1'
         };
 
-        function initDatabase() {
+        function initDB() {
             if (!localStorage.getItem(DB_KEYS.USERS)) {
                 const defaultUsers = [
-                    { username: 'admin', email: '7Dr-as', pass: 'admin123', balance: 0, referrer: '', depositsCount: 0 },
-                    { username: 'player_one', email: 'player@gmail.com', pass: 'password123', balance: 0, referrer: '', depositsCount: 0 },
-                    { username: 'ref1', email: 'ref1@gmail.com', pass: '123456', balance: 0, referrer: 'player_one', depositsCount: 1 },
-                    { username: 'ref2', email: 'ref2@gmail.com', pass: '123456', balance: 0, referrer: 'player_one', depositsCount: 1 },
-                    { username: 'ref3', email: 'ref3@gmail.com', pass: '123456', balance: 0, referrer: 'player_one', depositsCount: 1 },
-                    { username: 'ref4', email: 'ref4@gmail.com', pass: '123456', balance: 0, referrer: 'player_one', depositsCount: 1 },
-                    { username: 'ref5', email: 'ref5@gmail.com', pass: '123456', balance: 0, referrer: 'player_one', depositsCount: 1 }
+                    { username: 'admin', email: '7Dr-as', pass: 'admin123', balance: 0, referrer: '', depositsCount: 0, hasPlayed: false },
+                    { username: 'alex99', email: 'alex@gmail.com', pass: 'password123', balance: 150, referrer: '', depositsCount: 1, hasPlayed: false },
+                    { username: 'sarah_g', email: 'sarah@gmail.com', pass: 'password123', balance: 50, referrer: 'alex99', depositsCount: 1, hasPlayed: false }
                 ];
                 localStorage.setItem(DB_KEYS.USERS, JSON.stringify(defaultUsers));
             }
             if (!localStorage.getItem(DB_KEYS.DEPOSITS)) {
                 localStorage.setItem(DB_KEYS.DEPOSITS, JSON.stringify([
-                    { id: 'dep_init_1', username: 'ref1', amount: 100, proof: 'proof1.png', status: 'approved', timestamp: Date.now() },
-                    { id: 'dep_init_2', username: 'ref2', amount: 100, proof: 'proof2.png', status: 'approved', timestamp: Date.now() },
-                    { id: 'dep_init_3', username: 'ref3', amount: 100, proof: 'proof3.png', status: 'approved', timestamp: Date.now() },
-                    { id: 'dep_init_4', username: 'ref4', amount: 100, proof: 'proof4.png', status: 'approved', timestamp: Date.now() },
-                    { id: 'dep_init_5', username: 'ref5', amount: 100, proof: 'proof5.png', status: 'approved', timestamp: Date.now() }
+                    { id: 'dep_1', username: 'alex99', amount: 100, proof: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="150"><rect width="100%" height="100%" fill="%232563eb"/><text x="50%" y="50%" fill="%23fff" font-size="16" text-anchor="middle" dominant-baseline="middle">Sample Proof</text></svg>', status: 'approved', timestamp: Date.now() - 86400000 },
+                    { id: 'dep_2', username: 'sarah_g', amount: 100, proof: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="150"><rect width="100%" height="100%" fill="%2316a34a"/><text x="50%" y="50%" fill="%23fff" font-size="16" text-anchor="middle" dominant-baseline="middle">Sample Proof 2</text></svg>', status: 'approved', timestamp: Date.now() - 43200000 }
                 ]));
             }
             if (!localStorage.getItem(DB_KEYS.WITHDRAWALS)) {
@@ -77,24 +71,25 @@
             }
             if (!localStorage.getItem(DB_KEYS.LIVE_FEED)) {
                 localStorage.setItem(DB_KEYS.LIVE_FEED, JSON.stringify([
-                    { user: 'ref1', amount: 45, time: '3 mins ago' },
-                    { user: 'ref2', amount: 50, time: '10 mins ago' }
+                    { user: 'alex99', amount: 45, time: '2 mins ago' },
+                    { user: 'sarah_g', amount: 35, time: '5 mins ago' },
+                    { user: 'david_k', amount: 50, time: '12 mins ago' }
                 ]));
             }
         }
 
-        initDatabase();
+        initDB();
 
-        const getStorage = (key) => JSON.parse(localStorage.getItem(key) || '[]');
-        const setStorage = (key, data) => localStorage.setItem(key, JSON.stringify(data));
-
+        const getStorageData = (key) => JSON.parse(localStorage.getItem(key) || '[]');
+        const setStorageData = (key, data) => localStorage.setItem(key, JSON.stringify(data));
+        
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
-            toast.className = `px-4 py-3 rounded-xl text-white text-sm font-semibold shadow-xl flex items-center gap-3 transition-all transform translate-y-2 opacity-0 ${type === 'success' ? 'bg-emerald-600' : 'bg-rose-600'}`;
+            toast.className = `px-4 py-3 rounded-xl text-white text-sm font-medium shadow-lg flex items-center gap-3 transition-all transform translate-y-2 opacity-0 ${type === 'success' ? 'bg-emerald-600' : 'bg-rose-600'}`;
             toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation'}"></i> <span>${message}</span>`;
             container.appendChild(toast);
-            setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 20);
+            setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 50);
             setTimeout(() => {
                 toast.classList.add('translate-y-2', 'opacity-0');
                 setTimeout(() => toast.remove(), 300);
@@ -103,7 +98,7 @@
 
         function copyToClipboard(text, label = 'Text') {
             navigator.clipboard.writeText(text);
-            showToast(`${label} copied successfully!`);
+            showToast(`${label} copied to clipboard!`);
         }
 
         function getCurrentUser() {
@@ -115,9 +110,6 @@
             else localStorage.removeItem(DB_KEYS.SESSION);
         }
 
-        /* ==========================================================
-           ROUTER CONTROLLER
-           ================================================---------- */
         function router() {
             const user = getCurrentUser();
             const hash = window.location.hash.replace('#', '') || 'home';
@@ -134,7 +126,7 @@
         window.addEventListener('hashchange', router);
 
         /* ==========================================================
-           1. AUTH PAGE (SIGN UP & SIGN IN WITH FUNCTIONAL PASSWORD TOGGLE)
+           1. AUTHENTICATION & SIGN UP / SIGN IN PAGE
            ================================================---------- */
         function renderAuthPage() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -142,11 +134,11 @@
 
             const app = document.getElementById('app');
             app.innerHTML = `
-                <div class="flex-1 flex items-center justify-center p-4 bg-gradient-to-br from-jasper-100 via-white to-jasper-100">
+                <div class="flex-1 flex items-center justify-center p-4 sm:p-6 bg-gradient-to-br from-jasper-100 via-white to-jasper-100">
                     <div class="w-full max-w-md bg-white rounded-2xl shadow-xl border border-jasper-100 p-8">
                         <div class="text-center mb-6">
                             <h2 class="text-3xl font-bold tracking-tight text-jasper-900">Boxify Gift</h2>
-                            <p class="text-sm text-gray-500 mt-1">Sleek rewarding mystery box platform</p>
+                            <p class="text-sm text-gray-500 mt-1">Sleek rewarding experience & mystery boxes</p>
                         </div>
 
                         <div class="flex rounded-xl bg-jasper-50 p-1 mb-6">
@@ -157,16 +149,11 @@
                         <form id="form-signin" onsubmit="handleSignIn(event)" class="space-y-4">
                             <div>
                                 <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Email or Username</label>
-                                <input type="text" id="signin-identity" required placeholder="Enter email/username (Admin: 7Dr-as)" class="w-full px-4 py-2.5 rounded-xl border border-jasper-200 focus:outline-none focus:ring-2 focus:ring-jasper-600 text-sm">
+                                <input type="text" id="signin-identity" required placeholder="Enter your email or username (admin: 7Dr-as)" class="w-full px-4 py-2.5 rounded-xl border border-jasper-200 focus:outline-none focus:ring-2 focus:ring-jasper-600 text-sm">
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Password</label>
-                                <div class="relative">
-                                    <input type="password" id="signin-password" required placeholder="••••••••" class="w-full px-4 py-2.5 pr-10 rounded-xl border border-jasper-200 focus:outline-none focus:ring-2 focus:ring-jasper-600 text-sm">
-                                    <button type="button" onclick="togglePasswordVisibility('signin-password', 'signin-eye')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
-                                        <i id="signin-eye" class="fa-solid fa-eye text-sm"></i>
-                                    </button>
-                                </div>
+                                <input type="password" id="signin-password" required placeholder="••••••••" class="w-full px-4 py-2.5 rounded-xl border border-jasper-200 focus:outline-none focus:ring-2 focus:ring-jasper-600 text-sm">
                             </div>
                             <button type="submit" class="w-full py-3 bg-jasper-600 hover:bg-jasper-700 text-white font-semibold rounded-xl shadow-md transition-all text-sm">Sign In</button>
                         </form>
@@ -174,7 +161,7 @@
                         <form id="form-signup" onsubmit="handleSignUp(event)" class="space-y-4 hidden">
                             <div>
                                 <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Username *</label>
-                                <input type="text" id="signup-username" required placeholder="Unique username" class="w-full px-4 py-2.5 rounded-xl border border-jasper-200 focus:outline-none focus:ring-2 focus:ring-jasper-600 text-sm">
+                                <input type="text" id="signup-username" required placeholder="Choose a unique username" class="w-full px-4 py-2.5 rounded-xl border border-jasper-200 focus:outline-none focus:ring-2 focus:ring-jasper-600 text-sm">
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Email Address *</label>
@@ -182,16 +169,11 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Password *</label>
-                                <div class="relative">
-                                    <input type="password" id="signup-password" required placeholder="••••••••" class="w-full px-4 py-2.5 pr-10 rounded-xl border border-jasper-200 focus:outline-none focus:ring-2 focus:ring-jasper-600 text-sm">
-                                    <button type="button" onclick="togglePasswordVisibility('signup-password', 'signup-eye')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
-                                        <i id="signup-eye" class="fa-solid fa-eye text-sm"></i>
-                                    </button>
-                                </div>
+                                <input type="password" id="signup-password" required placeholder="At least 6 characters" class="w-full px-4 py-2.5 rounded-xl border border-jasper-200 focus:outline-none focus:ring-2 focus:ring-jasper-600 text-sm">
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Referral Link / Code (Optional)</label>
-                                <input type="text" id="signup-referral" value="${refCode}" placeholder="Referrer username" class="w-full px-4 py-2.5 rounded-xl border border-jasper-200 focus:outline-none focus:ring-2 focus:ring-jasper-600 text-sm">
+                                <input type="text" id="signup-referral" value="${refCode}" placeholder="Referrer username if applicable" class="w-full px-4 py-2.5 rounded-xl border border-jasper-200 focus:outline-none focus:ring-2 focus:ring-jasper-600 text-sm">
                             </div>
                             <div class="flex items-start gap-3 pt-1">
                                 <input type="checkbox" id="signup-terms" onchange="toggleSignUpButton()" class="mt-1 h-4 w-4 rounded border-gray-300 text-jasper-600 focus:ring-jasper-500">
@@ -225,18 +207,6 @@
             }
         }
 
-        function togglePasswordVisibility(fieldId, iconId) {
-            const field = document.getElementById(fieldId);
-            const icon = document.getElementById(iconId);
-            if (field.type === 'password') {
-                field.type = 'text';
-                icon.className = 'fa-solid fa-eye-slash text-sm';
-            } else {
-                field.type = 'password';
-                icon.className = 'fa-solid fa-eye text-sm';
-            }
-        }
-
         function toggleSignUpButton() {
             const checkbox = document.getElementById('signup-terms');
             const btn = document.getElementById('btn-signup-submit');
@@ -262,7 +232,7 @@
                 return;
             }
 
-            const users = getStorage(DB_KEYS.USERS);
+            const users = getStorageData(DB_KEYS.USERS);
             const found = users.find(u => (u.email === identity || u.username === identity) && u.pass === pass);
 
             if (found) {
@@ -281,13 +251,13 @@
             const pass = document.getElementById('signup-password').value.trim();
             const referrer = document.getElementById('signup-referral').value.trim();
 
-            const users = getStorage(DB_KEYS.USERS);
+            const users = getStorageData(DB_KEYS.USERS);
             if (users.some(u => u.username === username)) {
-                showToast('Username already taken. Please choose another.', 'error');
+                showToast('Username is already taken. Choose another.', 'error');
                 return;
             }
             if (users.some(u => u.email === email)) {
-                showToast('Email address already registered.', 'error');
+                showToast('Email is already registered.', 'error');
                 return;
             }
 
@@ -298,11 +268,12 @@
                 balance: 0,
                 referrer: referrer || '',
                 depositsCount: 0,
+                hasPlayed: false,
                 createdAt: Date.now()
             };
 
             users.push(newUser);
-            setStorage(DB_KEYS.USERS, users);
+            setStorageData(DB_KEYS.USERS, users);
             setCurrentUser(newUser);
             showToast('Account created successfully!');
             router();
@@ -312,18 +283,20 @@
            2. ADMIN PANEL
            ================================================---------- */
         function renderAdminPanel() {
-            const deposits = getStorage(DB_KEYS.DEPOSITS);
+            const deposits = getStorageData(DB_KEYS.DEPOSITS);
             const pendingDeposits = deposits.filter(d => d.status === 'pending');
-            const withdrawals = getStorage(DB_KEYS.WITHDRAWALS);
+            const withdrawals = getStorageData(DB_KEYS.WITHDRAWALS);
             const pendingWithdrawals = withdrawals.filter(w => w.status === 'pending');
-            const users = getStorage(DB_KEYS.USERS);
+            const users = getStorageData(DB_KEYS.USERS);
 
             const app = document.getElementById('app');
             app.innerHTML = `
                 <div class="min-h-screen bg-jasper-50 flex flex-col">
                     <header class="bg-white border-b border-jasper-200 px-6 py-4 flex justify-between items-center shadow-sm">
-                        <h2 class="text-xl font-bold text-jasper-900">Boxify Gift — Admin Panel</h2>
-                        <button onclick="handleLogout()" class="px-4 py-2 bg-rose-50 text-rose-600 font-semibold rounded-xl text-sm hover:bg-rose-100 transition-all">Sign Out</button>
+                        <div class="flex items-center gap-3">
+                            <h2 class="text-xl font-bold text-jasper-900">Boxify Gift — Admin Panel</h2>
+                        </div>
+                        <button onclick="handleLogout()" class="px-4 py-2 bg-rose-50 text-rose-600 font-medium rounded-xl text-sm hover:bg-rose-100 transition-all">Sign Out</button>
                     </header>
                     <main class="flex-1 max-w-7xl w-full mx-auto p-6 space-y-8">
                         
@@ -331,23 +304,25 @@
                             <h3 class="text-lg font-bold text-jasper-900 mb-4 flex items-center gap-2">
                                 <i class="fa-solid fa-receipt text-amber-500"></i> Pending Deposit Approvals
                             </h3>
-                            ${pendingDeposits.length === 0 ? '<p class="text-gray-500 text-sm">No pending deposits.</p>' : `
+                            ${pendingDeposits.length === 0 ? '<p class="text-gray-500 text-sm">No pending deposit requests found.</p>' : `
                                 <div class="overflow-x-auto">
                                     <table class="w-full text-left text-sm">
                                         <thead class="bg-jasper-50 text-jasper-800 font-semibold uppercase text-xs">
                                             <tr>
                                                 <th class="p-3">User</th>
                                                 <th class="p-3">Amount</th>
-                                                <th class="p-3">Screenshot Proof</th>
+                                                <th class="p-3">Proof / Screenshot</th>
                                                 <th class="p-3">Action</th>
                                             </tr>
                                         </thead>
                                         <tbody class="divide-y divide-jasper-100">
                                             ${pendingDeposits.map(d => `
                                                 <tr>
-                                                    <td class="p-3 font-semibold">${d.username}</td>
+                                                    <td class="p-3 font-medium">${d.username}</td>
                                                     <td class="p-3 font-bold text-emerald-600">Rs. ${d.amount}</td>
-                                                    <td class="p-3"><span class="text-jasper-600 underline cursor-pointer" onclick="showProofModal('${d.proof}')">View Proof</span></td>
+                                                    <td class="p-3">
+                                                        <img src="${d.proof}" alt="Proof" class="w-16 h-16 object-cover rounded-lg cursor-pointer hover:opacity-80 border border-jasper-200 shadow-sm" onclick="showZoomModal('${d.proof}')">
+                                                    </td>
                                                     <td class="p-3 flex gap-2">
                                                         <button onclick="approveDeposit('${d.id}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold">Approve</button>
                                                         <button onclick="rejectDeposit('${d.id}')" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold">Reject</button>
@@ -364,28 +339,30 @@
                             <h3 class="text-lg font-bold text-jasper-900 mb-4 flex items-center gap-2">
                                 <i class="fa-solid fa-wallet text-indigo-500"></i> Pending Withdrawals & User Audit
                             </h3>
-                            ${pendingWithdrawals.length === 0 ? '<p class="text-gray-500 text-sm">No pending withdrawals.</p>' : `
+                            ${pendingWithdrawals.length === 0 ? '<p class="text-gray-500 text-sm">No pending withdrawal requests found.</p>' : `
                                 <div class="overflow-x-auto">
                                     <table class="w-full text-left text-sm">
                                         <thead class="bg-jasper-50 text-jasper-800 font-semibold uppercase text-xs">
                                             <tr>
                                                 <th class="p-3">User</th>
                                                 <th class="p-3">Method</th>
-                                                <th class="p-3">Account Details</th>
-                                                <th class="p-3">Referral Status</th>
+                                                <th class="p-3">Account No / Name</th>
+                                                <th class="p-3">Referral Audit</th>
                                                 <th class="p-3">Action</th>
                                             </tr>
                                         </thead>
                                         <tbody class="divide-y divide-jasper-100">
                                             ${pendingWithdrawals.map(w => {
-                                                const uRefs = users.filter(u => u.referrer === w.username);
-                                                const depositingRefs = uRefs.filter(u => u.depositsCount > 0).length;
+                                                const userRefs = users.filter(u => u.referrer === w.username);
+                                                const depositingRefs = userRefs.filter(u => u.depositsCount > 0);
                                                 return `
                                                     <tr>
-                                                        <td class="p-3 font-semibold">${w.username}</td>
+                                                        <td class="p-3 font-medium">${w.username}</td>
                                                         <td class="p-3 font-semibold">${w.method}</td>
                                                         <td class="p-3">${w.accNo} (${w.accName})</td>
-                                                        <td class="p-3 font-bold ${depositingRefs >= 5 ? 'text-emerald-600' : 'text-rose-600'}">${depositingRefs}/5 depositing refs</td>
+                                                        <td class="p-3 text-xs">
+                                                            <span class="font-bold ${depositingRefs.length >= 5 ? 'text-emerald-600' : 'text-rose-600'}">${depositingRefs.length}/5 depositing refs</span>
+                                                        </td>
                                                         <td class="p-3 flex gap-2">
                                                             <button onclick="processWithdrawal('${w.id}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold">Process</button>
                                                         </td>
@@ -403,17 +380,17 @@
             `;
         }
 
-        function showProofModal(proofText) {
+        function showZoomModal(imgSrc) {
             const modal = document.getElementById('modal-container');
             modal.innerHTML = `
-                <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-                    <div class="bg-white rounded-2xl max-w-lg w-full p-6 text-center space-y-4">
-                        <h3 class="text-lg font-bold text-jasper-900">Deposit Proof</h3>
-                        <div class="p-6 bg-jasper-50 rounded-xl border border-dashed border-jasper-200 text-gray-700 font-medium">
-                            <i class="fa-solid fa-file-image text-4xl text-jasper-600 mb-2"></i>
-                            <p>${proofText}</p>
+                <div class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onclick="closeModal()">
+                    <div class="relative max-w-3xl w-full bg-white rounded-2xl p-4 overflow-hidden text-center" onclick="event.stopPropagation()">
+                        <button onclick="closeModal()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 flex items-center justify-center font-bold">×</button>
+                        <h3 class="text-lg font-bold text-jasper-900 mb-3">Deposit Screenshot Preview</h3>
+                        <div class="max-h-[70vh] overflow-auto flex items-center justify-center bg-jasper-50 rounded-xl p-2">
+                            <img src="${imgSrc}" alt="Zoomed Proof" class="max-w-full h-auto rounded-lg shadow-md">
                         </div>
-                        <button onclick="closeModal()" class="w-full py-2.5 bg-jasper-600 text-white font-semibold rounded-xl text-sm">Close</button>
+                        <button onclick="closeModal()" class="mt-4 px-6 py-2 bg-jasper-600 text-white font-semibold rounded-xl text-sm">Close</button>
                     </div>
                 </div>
             `;
@@ -424,40 +401,43 @@
         }
 
         function approveDeposit(depId) {
-            let deposits = getStorage(DB_KEYS.DEPOSITS);
+            let deposits = getStorageData(DB_KEYS.DEPOSITS);
             const dep = deposits.find(d => d.id === depId);
             if (!dep) return;
-            dep.status = 'approved';
-            setStorage(DB_KEYS.DEPOSITS, deposits);
 
-            let users = getStorage(DB_KEYS.USERS);
+            dep.status = 'approved';
+            setStorageData(DB_KEYS.DEPOSITS, deposits);
+
+            let users = getStorageData(DB_KEYS.USERS);
             const user = users.find(u => u.username === dep.username);
             if (user) {
                 user.balance = (user.balance || 0) + dep.amount;
                 user.depositsCount = (user.depositsCount || 0) + 1;
-                setStorage(DB_KEYS.USERS, users);
+                user.hasPlayed = false; // Reset game lock so user can play once after new deposit approval
+                setStorageData(DB_KEYS.USERS, users);
             }
+
             showToast('Deposit approved successfully!');
             renderAdminPanel();
         }
 
         function rejectDeposit(depId) {
-            let deposits = getStorage(DB_KEYS.DEPOSITS);
+            let deposits = getStorageData(DB_KEYS.DEPOSITS);
             const dep = deposits.find(d => d.id === depId);
             if (dep) {
                 dep.status = 'rejected';
-                setStorage(DB_KEYS.DEPOSITS, deposits);
+                setStorageData(DB_KEYS.DEPOSITS, deposits);
                 showToast('Deposit rejected.', 'error');
                 renderAdminPanel();
             }
         }
 
         function processWithdrawal(wId) {
-            let withdrawals = getStorage(DB_KEYS.WITHDRAWALS);
+            let withdrawals = getStorageData(DB_KEYS.WITHDRAWALS);
             const w = withdrawals.find(item => item.id === wId);
             if (w) {
                 w.status = 'processed';
-                setStorage(DB_KEYS.WITHDRAWALS, withdrawals);
+                setStorageData(DB_KEYS.WITHDRAWALS, withdrawals);
                 showToast('Withdrawal processed successfully!');
                 renderAdminPanel();
             }
@@ -474,14 +454,16 @@
            ================================================---------- */
         function renderDashboard(subView = 'home') {
             const user = getCurrentUser();
-            const users = getStorage(DB_KEYS.USERS);
+            const users = getStorageData(DB_KEYS.USERS);
             const currentUserData = users.find(u => u.username === user.username) || user;
 
             const app = document.getElementById('app');
             app.innerHTML = `
                 <div class="min-h-screen bg-jasper-50 flex flex-col relative">
                     <header class="bg-white border-b border-jasper-200 px-6 py-4 flex justify-between items-center shadow-sm">
-                        <h2 class="text-xl font-bold tracking-tight text-jasper-900 cursor-pointer" onclick="window.location.hash='home'">Boxify Gift</h2>
+                        <div class="flex items-center gap-3">
+                            <h2 class="text-xl font-bold tracking-tight text-jasper-900 cursor-pointer" onclick="window.location.hash='home'">Boxify Gift</h2>
+                        </div>
                         <div class="flex items-center gap-4">
                             <span class="text-sm font-semibold text-gray-700 hidden sm:inline">Hi, ${currentUserData.username}</span>
                             <button onclick="toggleSidebarMenu()" class="w-10 h-10 rounded-xl bg-jasper-50 hover:bg-jasper-100 flex items-center justify-center text-jasper-900 transition-all">
@@ -495,29 +477,12 @@
                             <h3 class="font-bold text-jasper-900 text-lg">Menu</h3>
                             <button onclick="toggleSidebarMenu()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
                         </div>
-                                    <nav class="flex-1 p-4 space-y-2">
-                <a href="#home" onclick="toggleSidebarMenu()" class="flex items-center gap-3 px-4 py-3 text-xs font-semibold text-gray-700 hover:bg-jasper-50 hover:text-jasper-700 rounded-xl transition">
-                    <i class="fa-solid fa-house text-base"></i>
-                    Home
-                </a>
-                <a href="#referrals" onclick="toggleSidebarMenu()" class="flex items-center gap-3 px-4 py-3 text-xs font-semibold text-gray-700 hover:bg-jasper-50 hover:text-jasper-700 rounded-xl transition">
-                    <i class="fa-solid fa-users text-base"></i>
-                    Your Referrals
-                </a>
-                <a href="#withdraw" onclick="toggleSidebarMenu()" class="flex items-center gap-3 px-4 py-3 text-xs font-semibold text-gray-700 hover:bg-jasper-50 hover:text-jasper-700 rounded-xl transition">
-                    <i class="fa-solid fa-wallet text-base"></i>
-                    Withdraw
-                </a>
-                <a href="#terms" onclick="toggleSidebarMenu()" class="flex items-center gap-3 px-4 py-3 text-xs font-semibold text-gray-700 hover:bg-jasper-50 hover:text-jasper-700 rounded-xl transition">
-                    <i class="fa-solid fa-file-lines text-base"></i>
-                    Term and Conditions
-                </a>
-                <a href="#help" onclick="openHelpModal(); toggleSidebarMenu();" class="flex items-center gap-3 px-4 py-3 text-xs font-semibold text-gray-700 hover:bg-jasper-50 hover:text-jasper-700 rounded-xl transition">
-                    <i class="fa-solid fa-headset text-base"></i>
-                    Help Center
-                </a>
-            </nav>
-
+                        <nav class="flex-1 p-4 space-y-2">
+                            <a href="#home" onclick="toggleSidebarMenu()" class="flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm text-jasper-900 hover:bg-jasper-50 transition-all"><i class="fa-solid fa-house w-5 text-jasper-600"></i> Home</a>
+                            <a href="#referrals" onclick="toggleSidebarMenu()" class="flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm text-jasper-900 hover:bg-jasper-50 transition-all"><i class="fa-solid fa-users w-5 text-jasper-600"></i> Your Referrals</a>
+                            <a href="#withdraw" onclick="toggleSidebarMenu()" class="flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm text-jasper-900 hover:bg-jasper-50 transition-all"><i class="fa-solid fa-wallet w-5 text-jasper-600"></i> Withdraw</a>
+                            <a href="#terms" onclick="toggleSidebarMenu()" class="flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm text-jasper-900 hover:bg-jasper-50 transition-all"><i class="fa-solid fa-file-contract w-5 text-jasper-600"></i> Term and Conditions</a>
+                        </nav>
                         <div class="p-4 border-t border-jasper-100">
                             <button onclick="handleLogout()" class="w-full py-3 bg-rose-50 text-rose-600 font-semibold rounded-xl text-sm hover:bg-rose-100 transition-all flex items-center justify-center gap-2">
                                 <i class="fa-solid fa-right-from-bracket"></i> Sign Out
@@ -527,8 +492,8 @@
 
                     <main class="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6 space-y-6">
                         
-                        <div onclick="openWithdrawModalFromBalance()" class="text-center py-4 bg-white rounded-2xl shadow-sm border border-jasper-100 cursor-pointer hover:border-jasper-600 transition-all">
-                            <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">Available Balance (Click to Withdraw)</span>
+                        <div class="text-center py-4 bg-white rounded-2xl shadow-sm border border-jasper-100">
+                            <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">Available Balance</span>
                             <h3 class="text-3xl font-extrabold text-jasper-900 mt-1">Rs. ${currentUserData.balance || 0}</h3>
                         </div>
 
@@ -543,19 +508,18 @@
         }
 
         function toggleSidebarMenu() {
-            document.getElementById('sidebar-menu').classList.toggle('translate-x-full');
+            const sidebar = document.getElementById('sidebar-menu');
+            sidebar.classList.toggle('translate-x-full');
         }
 
         function renderHomeView(user) {
-            const hasActiveBalance = (user.balance || 0) > 0;
-
             return `
                 <div class="bg-gradient-to-r from-jasper-800 to-jasper-700 text-white rounded-2xl p-6 shadow-md space-y-4">
                     <div class="flex items-center gap-3">
                         <i class="fa-solid fa-gift text-3xl text-amber-300"></i>
                         <div>
                             <h4 class="font-bold text-lg">Bigger the deposit, bigger the reward. Minimum deposit will be Rs. 100.</h4>
-                            <p class="text-xs text-jasper-100 mt-0.5">Send payment via EasyPaisa, then submit your screenshot proof below.</p>
+                            <p class="text-xs text-jasper-100 mt-0.5">Send payment via EasyPaisa using the account details below, then upload proof.</p>
                         </div>
                     </div>
                     <div class="bg-white/10 rounded-xl p-4 backdrop-blur-sm grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
@@ -581,7 +545,7 @@
                 <div class="bg-white rounded-2xl shadow-sm border border-jasper-100 p-6 space-y-6">
                     <div class="text-center">
                         <h3 class="text-xl font-bold text-jasper-900">You can select any Three Box</h3>
-                        ${!hasActiveBalance ? '<p class="text-xs text-rose-600 mt-1 font-semibold">Deposit and wait for admin approval to unlock box picks.</p>' : '<p class="text-xs text-emerald-600 mt-1 font-semibold">Active session unlocked! Pick 3 boxes.</p>'}
+                        <p class="text-xs text-gray-500 mt-1">Select 3 mystery boxes to claim your rewards. (Requires approved deposit balance & unused game turn)</p>
                     </div>
 
                     <div id="boxes-grid" class="grid grid-cols-3 sm:grid-cols-5 gap-4">
@@ -610,7 +574,7 @@
             return `
                 <div class="bg-white rounded-2xl shadow-sm border border-jasper-100 p-6 space-y-6">
                     <h3 class="text-xl font-bold text-jasper-900">Your Referrals</h3>
-                    <p class="text-sm text-gray-600">Share your referral link with friends. 5 active depositing referrals are required to withdraw.</p>
+                    <p class="text-sm text-gray-600">Share your unique referral link with friends. You need at least 5 active referrals with successful deposits to withdraw funds.</p>
                     
                     <div class="flex items-center gap-2 p-3 bg-jasper-50 rounded-xl border border-jasper-200">
                         <input type="text" readonly value="${myRefLink}" class="w-full bg-transparent text-sm text-gray-700 outline-none">
@@ -619,11 +583,11 @@
 
                     <div class="space-y-3">
                         <h4 class="font-bold text-sm text-jasper-900">Your Referral List (${userRefs.length})</h4>
-                        ${userRefs.length === 0 ? '<p class="text-xs text-gray-500">No referrals yet.</p>' : `
+                        ${userRefs.length === 0 ? '<p class="text-xs text-gray-500">No referrals yet. Share your link to start building your team!</p>' : `
                             <div class="divide-y divide-jasper-100 border border-jasper-100 rounded-xl overflow-hidden">
                                 ${userRefs.map(ref => `
                                     <div class="p-3 flex justify-between items-center text-sm">
-                                        <span class="font-semibold">${ref.username}</span>
+                                        <span class="font-medium">${ref.username}</span>
                                         <span class="text-xs px-2.5 py-1 rounded-full font-semibold ${ref.depositsCount > 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
                                             ${ref.depositsCount > 0 ? 'Deposited' : 'Pending Deposit'}
                                         </span>
@@ -640,14 +604,16 @@
             const userRefs = users.filter(u => u.referrer === user.username);
             const depositingRefs = userRefs.filter(u => u.depositsCount > 0).length;
             const myRefLink = `${window.location.origin}${window.location.pathname}?ref=${user.username}`;
+            const userWithdrawals = getStorageData(DB_KEYS.WITHDRAWALS).filter(w => w.username === user.username);
 
             return `
                 <div class="bg-white rounded-2xl shadow-sm border border-jasper-100 p-6 space-y-6 max-w-xl mx-auto">
                     <h3 class="text-xl font-bold text-jasper-900">Withdraw Funds</h3>
-                    <p class="text-sm text-gray-600">Available Balance: <strong class="text-jasper-900">Rs. ${user.balance || 0}</strong></p>
+                    <p class="text-sm text-gray-600">Current Balance: <strong class="text-jasper-900">Rs. ${user.balance || 0}</strong></p>
                     
-                    <div class="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs">
-                        <i class="fa-solid fa-triangle-exclamation mr-1"></i> Referral Status: <strong class="font-bold">${depositingRefs}/5</strong> active depositing referrals.
+                    <div class="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs space-y-1">
+                        <div><i class="fa-solid fa-triangle-exclamation mr-1"></i> Referral Status: <strong class="font-bold">${depositingRefs}/5</strong> active depositing referrals completed.</div>
+                        <div>Your Referrals Count: <strong>${userRefs.length}</strong> | Total Deposits from Referrals: <strong>${depositingRefs}</strong></div>
                     </div>
 
                     <form onsubmit="handleWithdrawSubmit(event, ${depositingRefs})" class="space-y-4">
@@ -669,12 +635,23 @@
                         <button type="submit" class="w-full py-3 bg-jasper-600 hover:bg-jasper-700 text-white font-semibold rounded-xl shadow text-sm">Submit Request</button>
                     </form>
 
-                    <div class="pt-4 border-t border-jasper-100">
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Your Referral Link</label>
-                        <div class="flex items-center gap-2 p-2.5 bg-jasper-50 rounded-xl border border-jasper-200">
-                            <input type="text" readonly value="${myRefLink}" class="w-full bg-transparent text-xs text-gray-700 outline-none">
-                            <button onclick="copyToClipboard('${myRefLink}', 'Referral Link')" class="px-3 py-1.5 bg-jasper-600 text-white rounded-lg text-xs font-semibold">Copy</button>
-                        </div>
+                    <div class="pt-4 border-t border-jasper-100 space-y-3">
+                        <h4 class="font-bold text-sm text-jasper-900">Your Withdrawal History</h4>
+                        ${userWithdrawals.length === 0 ? '<p class="text-xs text-gray-500">No withdrawal requests made yet.</p>' : `
+                            <div class="space-y-2">
+                                ${userWithdrawals.map(w => `
+                                    <div class="p-3 bg-jasper-50 rounded-xl text-xs flex justify-between items-center">
+                                        <div>
+                                            <span class="font-bold">${w.method}</span> (${w.accNo})
+                                            <div class="text-gray-500">${new Date(w.timestamp).toLocaleDateString()}</div>
+                                        </div>
+                                        <span class="px-2.5 py-1 rounded-full font-semibold ${w.status === 'processed' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+                                            ${w.status}
+                                        </span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `}
                     </div>
                 </div>
             `;
@@ -683,19 +660,19 @@
         function renderTermsView() {
             return `
                 <div class="bg-white rounded-2xl shadow-sm border border-jasper-100 p-6 space-y-4">
-                    <h3 class="text-xl font-bold text-jasper-900">Term and Conditions</h3>
+                    <h3 class="text-xl font-bold text-jasper-900">Terms and Conditions</h3>
                     <div class="space-y-3 text-sm text-gray-600 leading-relaxed">
                         <p>1. You are solely responsible for your own profits and losses.</p>
                         <p>2. Withdrawals must be made within 7 days, otherwise your balance will expire.</p>
-                        <p>3. Minimum deposit is Rs. 100.</p>
-                        <p>4. Withdrawals require at least 5 active depositing referrals.</p>
+                        <p>3. Minimum deposit is Rs. 100 to unlock game sessions and rewards.</p>
+                        <p>4. Withdrawals require a minimum of 5 active referrals who have successfully deposited.</p>
                     </div>
                 </div>
             `;
         }
 
         /* ==========================================================
-           DEPOSIT & GAMEPLAY FLOWS
+           DEPOSIT & GAMEPLAY INTERACTION CONTROLLERS
            ================================================---------- */
         function openDepositModal() {
             const modal = document.getElementById('modal-container');
@@ -703,14 +680,15 @@
                 <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
                     <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
                         <h3 class="text-lg font-bold text-jasper-900">Send your Deposit proof</h3>
-                        <p class="text-xs text-gray-500">Upload screenshot receipt of your EasyPaisa transfer.</p>
-                        <input type="file" id="deposit-file-input"  accept="image/png, image/jpeg, image/jpg, image/webp"
-
+                        <p class="text-xs text-gray-500">Upload screenshot or receipt (All image formats supported: PNG, JPG, JPEG, WEBP, etc.).</p>
                         
-                        class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-jasper-50 file:text-jasper-700 hover:file:bg-jasper-100">
+                        <div class="space-y-3">
+                            <input type="file" id="deposit-file-input" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-jasper-50 file:text-jasper-700 hover:file:bg-jasper-100">
+                        </div>
+
                         <div class="flex gap-3 pt-2">
                             <button onclick="closeModal()" class="flex-1 py-2.5 bg-gray-100 text-gray-700 font-semibold rounded-xl text-sm">Cancel</button>
-                            <button onclick="submitDepositProof()" class="flex-1 py-2.5 bg-jasper-600 text-white font-semibold rounded-xl text-sm">Submit</button>
+                            <button onclick="submitDepositProof()" class="flex-1 py-2.5 bg-jasper-600 hover:bg-jasper-700 text-white font-semibold rounded-xl text-sm">Submit</button>
                         </div>
                     </div>
                 </div>
@@ -720,26 +698,38 @@
         function submitDepositProof() {
             const user = getCurrentUser();
             const fileInput = document.getElementById('deposit-file-input');
-            const proofName = fileInput.files[0] ? fileInput.files[0].name : 'receipt_proof.png';
+            
+            if (!fileInput.files || fileInput.files.length === 0) {
+                showToast('Please select a screenshot file first!', 'error');
+                return;
+            }
 
-            const newDeposit = {
-                id: 'dep_' + Date.now(),
-                username: user.username,
-                amount: 100,
-                proof: proofName,
-                status: 'pending',
-                timestamp: Date.now()
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                const base64Image = e.target.result;
+
+                const newDeposit = {
+                    id: 'dep_' + Date.now(),
+                    username: user.username,
+                    amount: 100,
+                    proof: base64Image,
+                    status: 'pending',
+                    timestamp: Date.now()
+                };
+
+                let deposits = getStorageData(DB_KEYS.DEPOSITS);
+                deposits.push(newDeposit);
+                setStorageData(DB_KEYS.DEPOSITS, deposits);
+
+                closeModal();
+                showToast('Your deposit proof has been submitted for approval.');
             };
 
-            let deposits = getStorage(DB_KEYS.DEPOSITS);
-            deposits.push(newDeposit);
-            setStorage(DB_KEYS.DEPOSITS, deposits);
-
-            closeModal();
-            showToast('Your deposit is being verified.');
+            reader.readAsDataURL(file);
         }
 
-        // Gameplay Box Session State
         let gameState = {
             picksLeft: 3,
             totalWon: 0,
@@ -748,12 +738,19 @@
 
         function handleBoxClick(index) {
             const user = getCurrentUser();
-            if (!user || (user.balance || 0) <= 0) {
-                showToast('You need an approved deposit balance to play boxes!', 'error');
+            const users = getStorageData(DB_KEYS.USERS);
+            const dbUser = users.find(u => u.username === user.username) || user;
+
+            if (dbUser.hasPlayed) {
+                showToast('You have already played your turn! Make a new deposit to unlock and play again.', 'error');
+                return;
+            }
+            if (!dbUser || dbUser.balance <= 0) {
+                showToast('You need an approved deposit balance to play the mystery boxes!', 'error');
                 return;
             }
             if (gameState.picksLeft <= 0) {
-                showToast('Game session complete! Make a new deposit to play again.', 'error');
+                showToast('Game session complete!', 'error');
                 return;
             }
             if (gameState.openedBoxes.includes(index)) {
@@ -764,7 +761,7 @@
             gameState.openedBoxes.push(index);
             gameState.picksLeft--;
 
-            const reward = Math.floor(Math.random() * 15) + 10; // Combined range 30-50%
+            const reward = Math.floor(Math.random() * 15) + 10; 
             gameState.totalWon += reward;
 
             const boxEl = document.getElementById(`box-${index}`);
@@ -782,7 +779,7 @@
             const modal = document.getElementById('modal-container');
             modal.innerHTML = `
                 <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-                    <div class="bg-white rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl">
+                    <div class="bg-white rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl animate-bounce-in">
                         <div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto text-amber-600 text-3xl">
                             <i class="fa-solid fa-trophy"></i>
                         </div>
@@ -796,19 +793,19 @@
 
         function claimReward(reward) {
             const user = getCurrentUser();
-            let users = getStorage(DB_KEYS.USERS);
+            let users = getStorageData(DB_KEYS.USERS);
             const dbUser = users.find(u => u.username === user.username);
             if (dbUser) {
                 dbUser.balance = (dbUser.balance || 0) + reward;
-                setStorage(DB_KEYS.USERS, users);
+                setStorageData(DB_KEYS.USERS, users);
                 setCurrentUser(dbUser);
             }
             closeModal();
-            showToast(`Added Rs. ${reward} to your balance!`);
+            showToast(`Successfully added Rs. ${reward} to your balance!`);
             
-            let feed = getStorage(DB_KEYS.LIVE_FEED);
+            let feed = getStorageData(DB_KEYS.LIVE_FEED);
             feed.unshift({ user: user.username, amount: reward, time: 'Just now' });
-            setStorage(DB_KEYS.LIVE_FEED, feed);
+            setStorageData(DB_KEYS.LIVE_FEED, feed);
             renderLiveFeedTicker();
         }
 
@@ -831,10 +828,18 @@
                     }
                 }, idx * 1000);
             });
-        }
 
-        function openWithdrawModalFromBalance() {
-            window.location.hash = 'withdraw';
+            // Lock game permanently for this deposit cycle
+            const user = getCurrentUser();
+            let users = getStorageData(DB_KEYS.USERS);
+            const dbUser = users.find(u => u.username === user.username);
+            if (dbUser) {
+                dbUser.hasPlayed = true;
+                setStorageData(DB_KEYS.USERS, users);
+                setCurrentUser(dbUser);
+            }
+            gameState.picksLeft = 3;
+            gameState.openedBoxes = [];
         }
 
         function handleWithdrawSubmit(e, depositingRefs) {
@@ -860,18 +865,15 @@
                 timestamp: Date.now()
             };
 
-            let withdrawals = getStorage(DB_KEYS.WITHDRAWALS);
+            let withdrawals = getStorageData(DB_KEYS.WITHDRAWALS);
             withdrawals.push(newWithdrawal);
-            setStorage(DB_KEYS.WITHDRAWALS, withdrawals);
+            setStorageData(DB_KEYS.WITHDRAWALS, withdrawals);
 
             showToast('Withdrawal request submitted successfully!');
             window.location.hash = 'home';
         }
 
         function showPersistentReferralModal() {
-            const user = getCurrentUser();
-            const myRefLink = `${window.location.origin}${window.location.pathname}?ref=${user.username}`;
-            
             const modal = document.getElementById('modal-container');
             modal.innerHTML = `
                 <div class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
@@ -883,27 +885,17 @@
                         <p class="text-sm text-gray-600 leading-relaxed">
                             You must complete 5 active referrals who have made a deposit in order to withdraw.
                         </p>
-                        <div class="p-3 bg-jasper-50 rounded-xl border border-jasper-200 text-left">
-                            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Your Referral Link</label>
-                            <div class="flex items-center gap-2">
-                                <input type="text" readonly value="${myRefLink}" class="w-full bg-transparent text-xs text-gray-700 outline-none">
-                                <button onclick="copyToClipboard('${myRefLink}', 'Referral Link')" class="px-3 py-1 bg-jasper-600 text-white rounded-lg text-xs font-semibold shrink-0">Copy</button>
-                            </div>
-                        </div>
                         <button onclick="closeModal()" class="w-full py-3 bg-jasper-600 hover:bg-jasper-700 text-white font-semibold rounded-xl text-sm shadow-md">OK</button>
                     </div>
                 </div>
             `;
         }
 
-        /* ==========================================================
-           LIVE FEED TICKER
-           ================================================---------- */
         function renderLiveFeedTicker() {
             const container = document.getElementById('live-feed-ticker');
             if (!container) return;
 
-            const feed = getStorage(DB_KEYS.LIVE_FEED);
+            const feed = getStorageData(DB_KEYS.LIVE_FEED);
             container.innerHTML = feed.slice(0, 5).map(item => `
                 <div class="flex justify-between items-center p-3 bg-jasper-50 rounded-xl text-sm">
                     <span class="font-medium text-jasper-900"><i class="fa-solid fa-user-circle text-jasper-600 mr-2"></i> ${item.user} won <strong class="text-emerald-600">Rs. ${item.amount}</strong></span>
@@ -913,14 +905,14 @@
         }
 
         setInterval(() => {
-            const randomUsers = ['player_one', 'ref1', 'ref2', 'ref3', 'alex_99', 'sam_dev'];
+            const randomUsers = ['zain_pk', 'ahmed_99', 'bilal_x', 'maria_dev', 'usman_11', 'hamza_k'];
             const randomAmounts = [30, 45, 50, 35, 40, 55];
             const rUser = randomUsers[Math.floor(Math.random() * randomUsers.length)];
             const rAmt = randomAmounts[Math.floor(Math.random() * randomAmounts.length)];
 
-            let feed = getStorage(DB_KEYS.LIVE_FEED);
+            let feed = getStorageData(DB_KEYS.LIVE_FEED);
             feed.unshift({ user: rUser, amount: rAmt, time: 'Just now' });
-            setStorage(DB_KEYS.LIVE_FEED, feed);
+            setStorageData(DB_KEYS.LIVE_FEED, feed);
             renderLiveFeedTicker();
         }, 5000);
 
@@ -928,474 +920,6 @@
             router();
             setInterval(renderLiveFeedTicker, 2000);
         });
-
-const firebaseConfig = {
-  apiKey: "AIzaSyAZTA87zhyJRHaCIKVDEG36E9wLR-Qnt80",
-  authDomain: "boxifyapp-6f63f.firebaseapp.com",
-  projectId: "boxifyapp-6f63f",
-  storageBucket: "boxifyapp-6f63f.firebasestorage.app",
-  messagingSenderId: "845814985925",
-  appId: "1:845814985925:web:b7583e2feed78b4ea82cac"
-};
-
-
-// --- 1. یوزر کے لیے ہیلپ چیٹ موڈل (ہر قسم کی تصویر اور زوم کے ساتھ) ---
-function openHelpModal() {
-    const modal = document.getElementById('modal-container');
-    if (!modal) return;
-    
-    // فرض کریں یہ فنکشن آپ کے پروجیکٹ میں لاگ ان یوزر کا نام دیتا ہے
-    const currentUser = typeof getCurrentUser === 'function' ? getCurrentUser() : { username: 'User' };
-    
-    let supportChats = getStorage('DB_SUPPORT_CHATS') || {};
-    let userMessages = supportChats[currentUser.username] || [];
-
-    let messagesHTML = userMessages.map(msg => `
-        <div class="mb-3 ${msg.sender === 'user' ? 'text-right' : 'text-left'}">
-            <div class="inline-block p-3 rounded-xl text-xs max-w-[80%] ${msg.sender === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-gray-100 text-gray-800 rounded-bl-none shadow-sm'}">
-                <p class="break-words">${msg.text || ''}</p>
-                ${msg.image ? `
-                    <div class="mt-2">
-                        <!-- تصویر پر کلک کرنے سے وہ بڑی ونڈو میں کھل کر زوم ہو جائے گی -->
-                        <img src="${msg.image}" class="w-28 h-28 object-cover rounded-lg cursor-pointer border border-white/20 hover:opacity-95 transition" onclick="window.open('${msg.image}', '_blank')" title="Click to open & zoom">
-                    </div>
-                ` : ''}
-            </div>
-        </div>
-    `).join('');
-
-    modal.innerHTML = `
-        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div class="bg-white rounded-2xl max-w-md w-full p-4 flex flex-col h-[480px] shadow-2xl">
-                <!-- ہیڈر -->
-                <div class="flex justify-between items-center border-b pb-3 mb-3">
-                    <div class="flex items-center gap-2">
-                        <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                        <h3 class="font-bold text-gray-800 text-sm">Help & Support Center</h3>
-                    </div>
-                    <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 font-bold text-base px-2">✕</button>
-                </div>
-                
-                <!-- چیٹ کا سکرول ایبل ایریا -->
-                <div id="chat-messages-box" class="flex-1 overflow-y-auto p-2 border border-gray-100 rounded-xl bg-gray-50/50 mb-3 space-y-2">
-                    ${messagesHTML || '<div class="flex flex-col items-center justify-center h-full text-gray-400 text-xs"><p>No messages yet.</p><p class="text-[10px] mt-1">Send your query or payment screenshot here.</p></div>'}
-                </div>
-
-                <!-- ان پٹ، فائل اور سینڈ بٹن (تمام امیج فارمیٹس کے ساتھ) -->
-                <div class="flex flex-col gap-2 pt-2 border-t border-gray-100">
-                    <input type="text" id="help-msg-input" placeholder="Type your message here..." class="border border-gray-200 focus:border-indigo-500 focus:outline-none p-2.5 rounded-xl text-xs w-full bg-gray-50">
-                    
-                    <div class="flex justify-between items-center gap-2">
-                        <!-- accept="image/*" کی وجہ سے ہر قسم کا امیज فارمیٹ (JPG, PNG, WEBP, HEIC وغیرہ) سلیکٹ ہو سکے گا -->
-                        <label class="flex items-center gap-1.5 text-xs text-indigo-600 font-semibold bg-indigo-50 hover:bg-indigo-100 px-3 py-2 rounded-xl cursor-pointer transition">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            <span id="file-label-text">Attach Image</span>
-                            <input type="file" id="help-file-input" accept="image/*" class="hidden" onchange="updateFileName(this)">
-                        </label>
-
-                        <button onclick="sendHelpMessage()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl text-xs font-bold transition shadow-sm">
-                            Send Message
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // چیٹ کو ہمیشہ نیچے (آخری میسج پر) اسکرول رکھیں
-    let chatBox = document.getElementById('chat-messages-box');
-    if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
-}
-
-// فائل سلیکٹ ہونے پر نام دکھانے کے لیے چھوٹا فنکشن
-function updateFileName(input) {
-    let label = document.getElementById('file-label-text');
-    if (input.files && input.files[0]) {
-        label.innerText = "Image Attached ✓";
-    } else {
-        label.innerText = "Attach Image";
-    }
-}
-
-// یوزر کا میسج اور تصویر لوکل اسٹوریج میں سیو کرنے کا فنکشن
-function sendHelpMessage() {
-    const currentUser = typeof getCurrentUser === 'function' ? getCurrentUser() : { username: 'User' };
-    const textInput = document.getElementById('help-msg-input').value;
-    const fileInput = document.getElementById('help-file-input');
-
-    if (!textInput && (!fileInput || fileInput.files.length === 0)) return;
-
-    if (fileInput && fileInput.files.length > 0) {
-        let reader = new FileReader();
-        reader.readAsDataURL(fileInput.files[0]);
-        reader.onload = function () {
-            saveMessageToStorage(currentUser.username, textInput, reader.result);
-        };
-    } else {
-        saveMessageToStorage(currentUser.username, textInput, null);
-    }
-}
-
-function saveMessageToStorage(username, text, imageUrl) {
-    let supportChats = getStorage('DB_SUPPORT_CHATS') || {};
-    if (!supportChats[username]) supportChats[username] = [];
-
-    supportChats[username].push({
-        sender: 'user',
-        text: text,
-        image: imageUrl,
-        time: Date.now(),
-        status: 'unread'
-    });
-
-    setStorage('DB_SUPPORT_CHATS', supportChats);
-    openHelpModal();
-}
-
-
-// --- 2. ایڈمن کے لیے چیٹ اور ایکسیپٹ/ریجیکٹ بٹن (صرف ایڈمن پینل میں شو ہوں گے) ---
-function openAdminChat(username) {
-    let supportChats = getStorage('DB_SUPPORT_CHATS') || {};
-    let userMessages = supportChats[username] || [];
-    
-    // ایڈمن کے دیکھنے پر میسجز ریڈ مارک ہو جائیں گے
-    userMessages.forEach(m => { if(m.sender === 'user') m.status = 'read'; });
-    setStorage('DB_SUPPORT_CHATS', supportChats);
-
-    let modal = document.getElementById('modal-container');
-    if (!modal) return;
-
-    let messagesHTML = userMessages.map(msg => `
-        <div class="mb-3 ${msg.sender === 'admin' ? 'text-right' : 'text-left'}">
-            <div class="inline-block p-3 rounded-xl text-xs max-w-[80%] ${msg.sender === 'admin' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-gray-100 text-gray-800 rounded-bl-none shadow-sm'}">
-                <p class="break-words">${msg.text || ''}</p>
-                ${msg.image ? `
-                    <div class="mt-2">
-                        <img src="${msg.image}" class="w-32 h-32 object-cover rounded-lg cursor-pointer border border-white/20 hover:opacity-95 transition" onclick="window.open('${msg.image}', '_blank')" title="Click to zoom screenshot">
-                    </div>
-                ` : ''}
-            </div>
-        </div>
-    `).join('');
-
-    modal.innerHTML = `
-        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div class="bg-white rounded-2xl max-w-lg w-full p-4 flex flex-col h-[520px] shadow-2xl">
-                
-                <!-- ہیڈر: یوزر کا نام اور صرف ایڈمن کے لیے Accept/Reject بٹن -->
-                <div class="flex justify-between items-center border-b pb-3 mb-3">
-                    <div>
-                        <h3 class="font-bold text-gray-800 text-sm">Admin Review: <span class="text-indigo-600">${username}</span></h3>
-                        <p class="text-[10px] text-gray-400">Verify screenshot and manage deposit below</p>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <!-- یہ دونوں بٹن صرف ایڈمن کو نظر آئیں گے -->
-                        <button onclick="adminAcceptDeposit('${username}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-sm">Accept</button>
-                        <button onclick="adminRejectDeposit('${username}')" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-sm">Reject</button>
-                        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 font-bold ml-2 text-base">✕</button>
-                    </div>
-                </div>
-                
-                <!-- چیٹ کا ہسٹری باکس -->
-                <div class="flex-1 overflow-y-auto p-2 border border-gray-100 rounded-xl bg-gray-50/50 mb-3 space-y-2">
-                    ${messagesHTML || '<p class="text-xs text-center text-gray-400 mt-20">No conversation history found.</p>'}
-                </div>
-
-                <!-- ایڈمن کا ریپلائی باکس -->
-                <div class="flex gap-2 pt-2 border-t border-gray-100">
-                    <input type="text" id="admin-reply-input" placeholder="Type reply to user..." class="border border-gray-200 focus:border-indigo-500 focus:outline-none p-2.5 rounded-xl text-xs flex-1 bg-gray-50">
-                    <button onclick="sendAdminReply('${username}')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-sm">Reply</button>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-function sendAdminReply(username) {
-    let textInput = document.getElementById('admin-reply-input').value;
-    if (!textInput) return;
-
-    let supportChats = getStorage('DB_SUPPORT_CHATS') || {};
-    if (!supportChats[username]) supportChats[username] = [];
-
-    supportChats[username].push({
-        sender: 'admin',
-        text: textInput,
-        image: null,
-        time: Date.now()
-    });
-
-    setStorage('DB_SUPPORT_CHATS', supportChats);
-    openAdminChat(username);
-}
-
-// ایڈمن جب Accept کرے گا تو اماؤنٹ پوچھ کر یوزر کے بیلنس میں ایڈ کر دے گا
-function adminAcceptDeposit(username) {
-    let users = getStorage(DB_KEYS.USERS) || [];
-    let user = users.find(u => u.username === username);
-
-    if (!user) {
-        alert('User not found in database!');
-        return;
-    }
-
-    let depositAmount = prompt("Enter deposit amount to approve for " + username + ":", "100");
-    if (!depositAmount || isNaN(depositAmount)) return;
-
-    user.balance = (parseFloat(user.balance) || 0) + parseFloat(depositAmount);
-    setStorage(DB_KEYS.USERS, users);
-
-    // چیٹ میں آٹو میسج بھیج دیں
-    let supportChats = getStorage('DB_SUPPORT_CHATS') || {};
-    if (!supportChats[username]) supportChats[username] = [];
-    supportChats[username].push({
-        sender: 'admin',
-        text: 'System Notification: Your deposit of Rs. ' + depositAmount + ' has been approved and added to your balance!',
-        image: null,
-        time: Date.now()
-    });
-    setStorage('DB_SUPPORT_CHATS', supportChats);
-
-    alert('Deposit successfully approved for ' + username);
-    openAdminChat(username);
-}
-
-// ایڈمن جب Reject کرے گا
-function adminRejectDeposit(username) {
-    let reason = prompt("Enter rejection reason (optional):", "Invalid screenshot or payment not received");
-    
-    let supportChats = getStorage('DB_SUPPORT_CHATS') || {};
-    if (!supportChats[username]) supportChats[username] = [];
-
-    supportChats[username].push({
-        sender: 'admin',
-        text: 'System Notification: Your deposit proof has been rejected. Reason: ' + (reason || 'Verification failed'),
-        image: null,
-        time: Date.now()
-    });
-    setStorage('DB_SUPPORT_CHATS', supportChats);
-    
-    alert('Deposit request rejected.');
-    openAdminChat(username);
-}
-
-     // --- مکمل اور فائنل ہیلپ چیٹ جاوا اسکرپٹ کوڈ ---
-
-function openHelpModal() {
-    const modal = document.getElementById('modal-container');
-    if (!modal) {
-        alert('Modal container not found in HTML!');
-        return;
-    }
-    
-    let username = 'User';
-    try {
-        let activeUser = JSON.parse(localStorage.getItem('current_user'));
-        if (activeUser && activeUser.username) {
-            username = activeUser.username;
-        } else if (typeof getCurrentUser === 'function' && getCurrentUser()) {
-            let u = getCurrentUser();
-            username = u.username || 'User';
-        }
-    } catch (e) {
-        username = 'User';
-    }
-
-    let supportChats = {};
-    try {
-        supportChats = JSON.parse(localStorage.getItem('DB_SUPPORT_CHATS')) || {};
-    } catch(e) {
-        supportChats = {};
-    }
-
-    let userMessages = supportChats[username] || [];
-
-    let messagesHTML = userMessages.map(msg => `
-        <div class="mb-3 ${msg.sender === 'user' ? 'text-right' : 'text-left'}">
-            <div class="inline-block p-3 rounded-xl text-xs max-w-[80%] ${msg.sender === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-gray-100 text-gray-800 rounded-bl-none shadow-sm'}">
-                <p class="break-words">${msg.text || ''}</p>
-                ${msg.image ? `
-                    <div class="mt-2">
-                        <img src="${msg.image}" class="w-28 h-28 object-cover rounded-lg cursor-pointer border border-white/20 hover:opacity-95 transition" onclick="window.open('${msg.image}', '_blank')" title="Click to zoom">
-                    </div>
-                ` : ''}
-            </div>
-        </div>
-    `).join('');
-
-    modal.innerHTML = `
-        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div class="bg-white rounded-2xl max-w-md w-full p-4 flex flex-col h-[480px] shadow-2xl">
-                <div class="flex justify-between items-center border-b pb-3 mb-3">
-                    <div class="flex items-center gap-2">
-                        <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                        <h3 class="font-bold text-gray-800 text-sm">Help & Support Center</h3>
-                    </div>
-                    <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 font-bold text-base px-2">✕</button>
-                </div>
-                
-                <div id="chat-messages-box" class="flex-1 overflow-y-auto p-2 border border-gray-100 rounded-xl bg-gray-50/50 mb-3 space-y-2">
-                    ${messagesHTML || '<div class="flex flex-col items-center justify-center h-full text-gray-400 text-xs"><p>No messages yet.</p><p class="text-[10px] mt-1">Send your query or payment screenshot here.</p></div>'}
-                </div>
-
-                <div class="flex flex-col gap-2 pt-2 border-t border-gray-100">
-                    <input type="text" id="help-msg-input" placeholder="Type your message here..." class="border border-gray-200 focus:border-indigo-500 focus:outline-none p-2.5 rounded-xl text-xs w-full bg-gray-50">
-                    
-                    <div class="flex justify-between items-center gap-2">
-                        <label class="flex items-center gap-1.5 text-xs text-indigo-600 font-semibold bg-indigo-50 hover:bg-indigo-100 px-3 py-2 rounded-xl cursor-pointer transition">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            <span id="file-label-text">Attach Image</span>
-                            <input type="file" id="help-file-input" accept="image/*" class="hidden" onchange="updateFileName(this)">
-                        </label>
-
-                        <button onclick="sendHelpMessage()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl text-xs font-bold transition shadow-sm">
-                            Send Message
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    let chatBox = document.getElementById('chat-messages-box');
-    if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
-}
-
-function updateFileName(input) {
-    let label = document.getElementById('file-label-text');
-    if (input.files && input.files[0]) {
-        label.innerText = "Attached ✓";
-    } else {
-        label.innerText = "Attach Image";
-    }
-}
-
-function sendHelpMessage() {
-    let username = 'User';
-    try {
-        let activeUser = JSON.parse(localStorage.getItem('current_user'));
-        if (activeUser && activeUser.username) {
-            username = activeUser.username;
-        } else if (typeof getCurrentUser === 'function' && getCurrentUser()) {
-            let u = getCurrentUser();
-            username = u.username || 'User';
-        }
-    } catch (e) {
-        username = 'User';
-    }
-
-    const textInput = document.getElementById('help-msg-input').value.trim();
-    const fileInput = document.getElementById('help-file-input');
-
-    if (!textInput && (!fileInput || !fileInput.files || fileInput.files.length === 0)) {
-        alert('Please enter a message or attach an image.');
-        return;
-    }
-
-    if (fileInput && fileInput.files && fileInput.files.length > 0) {
-        let reader = new FileReader();
-        reader.readAsDataURL(fileInput.files[0]);
-        reader.onload = function () {
-            saveAndRefreshChat(username, textInput, reader.result);
-        };
-        reader.onerror = function () {
-            alert('Failed to read image file.');
-        };
-    } else {
-        saveAndRefreshChat(username, textInput, null);
-    }
-}
-
-function saveAndRefreshChat(username, text, imageUrl) {
-    try {
-        let supportChats = {};
-        try {
-            supportChats = JSON.parse(localStorage.getItem('DB_SUPPORT_CHATS')) || {};
-        } catch(e) {
-            supportChats = {};
-        }
-
-        if (!supportChats[username]) supportChats[username] = [];
-
-        supportChats[username].push({
-            sender: 'user',
-            text: text || '',
-            image: imageUrl || null,
-            time: Date.now(),
-            status: 'unread'
-        });
-
-        localStorage.setItem('DB_SUPPORT_CHATS', JSON.stringify(supportChats));
-        
-        // موڈل کو دوبارہ رینر کریں تاکہ میسج فورا سکرین پر نظر آجائے
-        openHelpModal();
-    } catch (err) {
-        alert('Error saving message: ' + err.message);
-    }
-}
-
-function closeModal() {
-    const modal = document.getElementById('modal-container');
-    if (modal) modal.innerHTML = '';
-}
-   
-// 1. ایڈمن جب بھی ڈپازٹ اپروو کرے، یہ کوڈ یوزر کی گیم انلاک کر دے گا
-function approveDeposit(username) {
-    let dbUsers = JSON.parse(localStorage.getItem('DB_USERS')) || {};
-    
-    // یوزر کا ڈیٹا ڈھونڈ کر اس کا کھیل کا فلیگ بالکل ختم/فالس کر دیں تاکہ گیم انلاک ہو جائے
-    if (dbUsers[username]) {
-        dbUsers[username].hasPlayed = false; 
-        localStorage.setItem('DB_USERS', JSON.stringify(dbUsers));
-    }
-
-    // اگر وہ یوزر اس وقت لاگ ان ہے تو اس کا سیشن بھی اپ ڈیٹ کر دیں
-    let currentUser = JSON.parse(localStorage.getItem('current_user'));
-    if (currentUser && currentUser.username === username) {
-        currentUser.hasPlayed = false;
-        localStorage.setItem('current_user', JSON.stringify(currentUser));
-    }
-}
-
-// 2. یوزر جب باکس پر کلک کرے
-function handleBoxClick(boxIndex) {
-    let currentUser = JSON.parse(localStorage.getItem('current_user'));
-    
-    // اگر یوزر پہلے ہی کھیل چکا ہے تو باکس نہ کھولیں اور انگلش میں پاپ اپ دکھائیں
-    if (currentUser && currentUser.hasPlayed === true) {
-        alert("You have already played using this deposit. Please make a new deposit to play again.");
-        return;
-    }
-
-    // --- یہاں آپ کا باکس کھولنے والا پراصل کوڈ آئے گا ---
-    console.log("Game opened successfully!");
-
-    // ایک بار گیم کھیلنے کے فوراً بعد اسے لاک کر دیں
-    if (currentUser) {
-        currentUser.hasPlayed = true;
-        localStorage.setItem('current_user', JSON.stringify(currentUser));
-
-        // مین ڈیٹا بیس میں بھی فلیگ اپ ڈیٹ کریں
-        try {
-            let dbUsers = JSON.parse(localStorage.getItem('DB_USERS')) || {};
-            if (dbUsers[currentUser.username]) {
-                dbUsers[currentUser.username].hasPlayed = true;
-                localStorage.setItem('DB_USERS', JSON.stringify(dbUsers));
-            }
-        } catch (e) {
-            console.error("Database error", e);
-        }
-    }
-}
-
-
-
-
-        
     </script>
 </body>
 </html>
