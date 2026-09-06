@@ -1343,34 +1343,47 @@ function closeModal() {
     if (modal) modal.innerHTML = '';
 }
    
-Function handleAdminApprove(depositId, username) {
-    console.log("Deposit status updated to approved.");
-
+// 1. ایڈمن جب بھی ڈپازٹ اپروو کرے، یہ کوڈ یوزر کی گیم انلاک کر دے گا
+function approveDeposit(username) {
     let dbUsers = JSON.parse(localStorage.getItem('DB_USERS')) || {};
+    
+    // یوزر کا ڈیٹا ڈھونڈ کر اس کا کھیل کا فلیگ بالکل ختم/فالس کر دیں تاکہ گیم انلاک ہو جائے
     if (dbUsers[username]) {
-        dbUsers[username].gameLocked = false;
+        dbUsers[username].hasPlayed = false; 
         localStorage.setItem('DB_USERS', JSON.stringify(dbUsers));
     }
 
+    // اگر وہ یوزر اس وقت لاگ ان ہے تو اس کا سیشن بھی اپ ڈیٹ کر دیں
     let currentUser = JSON.parse(localStorage.getItem('current_user'));
     if (currentUser && currentUser.username === username) {
-        currentUser.gameLocked = false;
+        currentUser.hasPlayed = false;
         localStorage.setItem('current_user', JSON.stringify(currentUser));
     }
 }
 
-function onLastBoxOpened() {
-     console.log("Last box opened automatically.");
-
+// 2. یوزر جب باکس پر کلک کرے
+function handleBoxClick(boxIndex) {
     let currentUser = JSON.parse(localStorage.getItem('current_user'));
+    
+    // اگر یوزر پہلے ہی کھیل چکا ہے تو باکس نہ کھولیں اور انگلش میں پاپ اپ دکھائیں
+    if (currentUser && currentUser.hasPlayed === true) {
+        alert("You have already played using this deposit. Please make a new deposit to play again.");
+        return;
+    }
+
+    // --- یہاں آپ کا باکس کھولنے والا پراصل کوڈ آئے گا ---
+    console.log("Game opened successfully!");
+
+    // ایک بار گیم کھیلنے کے فوراً بعد اسے لاک کر دیں
     if (currentUser) {
-        currentUser.gameLocked = true;
+        currentUser.hasPlayed = true;
         localStorage.setItem('current_user', JSON.stringify(currentUser));
 
-                try {
+        // مین ڈیٹا بیس میں بھی فلیگ اپ ڈیٹ کریں
+        try {
             let dbUsers = JSON.parse(localStorage.getItem('DB_USERS')) || {};
             if (dbUsers[currentUser.username]) {
-                dbUsers[currentUser.username].gameLocked = true;
+                dbUsers[currentUser.username].hasPlayed = true;
                 localStorage.setItem('DB_USERS', JSON.stringify(dbUsers));
             }
         } catch (e) {
@@ -1378,6 +1391,7 @@ function onLastBoxOpened() {
         }
     }
 }
+
 
 
 
