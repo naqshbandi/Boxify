@@ -270,47 +270,48 @@
                     <div class="tab" onclick="switchTab('signup')">Sign Up</div>
                 </div>
 
-                <!-- Sign In Form -->
-                <form id="signin-form" onsubmit="handleSignIn(event)">
-                    <div class="form-group">
-                        <label>Email or Username</label>
-                        <input type="text" id="signin-email" required placeholder="Enter email or 7Dr-as">
-                    </div>
-                    <div class="form-group">
-                        <label>Password</label>
-                        <input type="password" id="signin-password" required placeholder="Enter password">
-                    </div>
-                    <button type="submit">Sign In</button>
-                </form>
-
-                <!-- Sign Up Form -->
-                <form id="signup-form" class="hidden" onsubmit="handleSignUp(event)">
-                    <div class="form-group">
-                        <label>Username</label>
-                        <input type="text" id="signup-username" required placeholder="Unique username">
-                    </div>
-                    <div class="form-group">
-                        <label>Email</label>
-                        <input type="email" id="signup-email" required placeholder="Unique email">
-                    </div>
-                    <div class="form-group">
-                        <label>Password</label>
-                        <input type="password" id="signup-password" required placeholder="Create password">
-                    </div>
-                    <div class="form-group">
-                        <label>Referral Link / Code (Optional)</label>
-                        <input type="text" id="signup-ref" placeholder="Referrer username">
-                    </div>
-                    <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
-                        <input type="checkbox" id="terms-check" style="width: auto;" onchange="toggleSignUpBtn()">
-                        <label style="font-size: 0.8rem; margin: 0; color: var(--text-color);" for="terms-check">
-                            You are solely responsible for your own profits and losses. Withdrawals must be made within 7 days, otherwise your balance will expire.
-                        </label>
-                    </div>
-                    <button type="submit" id="signup-btn" disabled>Sign Up</button>
-                </form>
+                        <!-- Sign In Form -->
+        <form id="signin-form" onsubmit="handleSignIn(event)">
+            <div class="form-group">
+                <label>Email or Username</label>
+                <input type="text" id="signin-email" required placeholder="Enter email or username">
             </div>
-        </div>
+            <div class="form-group" style="position: relative;">
+                <label>Password</label>
+                <input type="password" id="signin-password" required placeholder="Enter password">
+                <span onclick="togglePassword('signin-password', this)" style="position: absolute; right: 10px; top: 32px; cursor: pointer; font-size: 14px; color: #888;">👁️</span>
+            </div>
+            <button type="submit">Sign In</button>
+        </form>
+
+        <!-- Sign Up Form -->
+        <form id="signup-form" class="hidden" onsubmit="handleSignUp(event)">
+            <div class="form-group">
+                <label>Username (Unique)</label>
+                <input type="text" id="signup-username" required placeholder="Choose a unique username">
+            </div>
+            <div class="form-group">
+                <label>Email (Unique)</label>
+                <input type="email" id="signup-email" required placeholder="Enter your email">
+            </div>
+            <div class="form-group" style="position: relative;">
+                <label>Password</label>
+                <input type="password" id="signup-password" required placeholder="Create a password">
+                <span onclick="togglePassword('signup-password', this)" style="position: absolute; right: 10px; top: 32px; cursor: pointer; font-size: 14px; color: #888;">👁️</span>
+            </div>
+            <div class="form-group">
+                <label>Referral Username (Optional)</label>
+                <input type="text" id="signup-ref" placeholder="Optional referrer username">
+            </div>
+            <div class="form-group" style="display: flex; align-items: flex-start; gap: 8px; margin: 10px 0;">
+                <input type="checkbox" id="terms-check" required style="width: auto; margin-top: 3px;">
+                <label for="terms-check" style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4;">
+                    I agree to the Terms & Conditions. I am solely responsible for my own profits and losses. I understand that balances must be withdrawn within 7 days or they will expire.
+                </label>
+            </div>
+            <button type="submit" id="signup-btn">Sign Up</button>
+        </form>
+
 
         <!-- Dashboard Section -->
         <div id="dashboard-page" class="hidden">
@@ -514,6 +515,27 @@ const firebaseConfig = {
                 alert('Navigating to: ' + section);
             }
         }
+
+        } else {
+            alert('Navigating to: ' + section);
+        }
+    }
+
+    // یہاں یہ نیا پاسورڈ شو/ہائیڈ والا فنکشن پیسٹ کر دیں:
+    function togglePassword(fieldId, iconElement) {
+        const passwordField = document.getElementById(fieldId);
+        if (passwordField.type === "password") {
+            passwordField.type = "text";
+            iconElement.textContent = "🙈";
+        } else {
+            passwordField.type = "password";
+            iconElement.textContent = "👁️";
+        }
+    }
+</script>
+<body ...>
+
+                        
     </script>
 </body>
 </html>
