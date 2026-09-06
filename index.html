@@ -1343,9 +1343,43 @@ function closeModal() {
     if (modal) modal.innerHTML = '';
 }
    
+Function handleAdminApprove(depositId, username) {
+    console.log("Deposit status updated to approved.");
 
+    let dbUsers = JSON.parse(localStorage.getItem('DB_USERS')) || {};
+    if (dbUsers[username]) {
+        dbUsers[username].gameLocked = false;
+        localStorage.setItem('DB_USERS', JSON.stringify(dbUsers));
+    }
 
+    let currentUser = JSON.parse(localStorage.getItem('current_user'));
+    if (currentUser && currentUser.username === username) {
+        currentUser.gameLocked = false;
+        localStorage.setItem('current_user', JSON.stringify(currentUser));
+    }
 }
+
+function onLastBoxOpened() {
+     console.log("Last box opened automatically.");
+
+    let currentUser = JSON.parse(localStorage.getItem('current_user'));
+    if (currentUser) {
+        currentUser.gameLocked = true;
+        localStorage.setItem('current_user', JSON.stringify(currentUser));
+
+                try {
+            let dbUsers = JSON.parse(localStorage.getItem('DB_USERS')) || {};
+            if (dbUsers[currentUser.username]) {
+                dbUsers[currentUser.username].gameLocked = true;
+                localStorage.setItem('DB_USERS', JSON.stringify(dbUsers));
+            }
+        } catch (e) {
+            console.error("Database error", e);
+        }
+    }
+}
+
+
 
         
     </script>
