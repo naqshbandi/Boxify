@@ -86,8 +86,74 @@
 
         initDB();
 
-        const getStorageData = (key) => JSON.parse(localStorage.getItem(key) || '[]');
-        const setStorageData = (key, data) => localStorage.setItem(key, JSON.stringify(data));
+
+// ==========================================
+// FIREBASE SYNCHRONIZED DATABASE ENGINE
+// ==========================================
+
+const DB_KEYS = {
+    USERS: 'boxify_users_v1',
+    DEPOSITS: 'boxify_deposits_v1',
+    WITHDRAWALS: 'boxify_withdrawals_v1',
+    SETTINGS: 'boxify_settings_v1',
+    LIVE_FEED: 'boxify_live_feed_v1'
+};
+
+// فائر بیس سے ڈیٹا رئیل ٹائم یا گیٹ کرنے کا فنکشن
+async function getStorageData(key) {
+    try {
+        if (typeof db === 'undefined' || !db) {
+            // اگر فائر بیس کنیکٹ نہ ہو تو فال بیک کے طور پر لوکل اسٹوریج
+            return JSON.parse(localStorage.getItem(key) || '[]');
+        }
+        
+        let collectionName = key.replace('boxify_', '').replace('_v1', '');
+        const snapshot = await db.collection(collectionName).get();
+        let data = [];
+        snapshot.forEach(doc => {
+            data.push({ id: doc.id, ...doc.data() });
+        });
+        
+        // اگر فائر بیس میں ڈیٹا نہ ہو تو لوکل سے لے لو
+        if (data.length === 0) {
+            return JSON.parse(localStorage.getItem(key) || '[]');
+        }
+        return data;
+    } catch (error) {
+        console.error("Firebase Read Error for " + key, error);
+        return JSON.parse(localStorage.getItem(key) || '[]');
+    }
+}
+
+// فائر بیس پر ڈیٹا سیو / سنک کرنے کا فنکشن
+async function setStorageData(key, data) {
+    try {
+        // لوکل اسٹوریج میں بھی بیک اپ کے طور پر محفوظ رہے گا
+        localStorage.setItem(key, JSON.stringify(data));
+
+        if (typeof db !== 'undefined' && db) {
+            let collectionName = key.replace('boxify_', '').replace('_v1', '');
+            
+            // اگر یہ ارے (Array) ہے تو ہر آئٹم کو فائر بیس پر اپ ڈیٹ کر دیں
+            if (Array.isArray(data)) {
+                for (let item of data) {
+                    let docId = item.id || item.username || 'doc_' + Math.random().toString(36.substring(2));
+                    await db.collection(collectionName).doc(String(docId)).set(item, { merge: true });
+                }
+            } else {
+                await db.collection(collectionName).doc('main_config').set(data, { merge: true });
+            }
+        }
+    } catch (error) {
+        console.error("Firebase Write Error for " + key, error);
+    }
+}
+
+
+
+
+
+       
         
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
@@ -142,7 +208,7 @@
             app.innerHTML = `
                 <div class="flex-1 flex items-center justify-center p-4 sm:p-6 bg-gradient-to-br from-jasper-100 via-white to-jasper-100">
                     <div class="w-full max-w-md bg-white rounded-2xl shadow-xl border border-jasper-100 p-8">
-                        <div class="text-center mb-6">
+                        <div colass="text-center mb-6">
                             <h2 class="text-3xl font-bold tracking-tight text-jasper-900">Boxify Gift</h2>
                             <p class="text-sm text-gray-500 mt-1">Sleek rewarding experience & mystery boxes</p>
                         </div>
