@@ -86,7 +86,8 @@
 
         initDB();
 
-
+const getStorageData = (key) => JSON.parse(localStorage.getItem(key) || '[]');
+        const setStorageData = (key, data) => localStorage.setItem(key, JSON.stringify(data));
 // ==========================================
 // FIREBASE SYNCHRONIZED DATABASE ENGINE
 // ==========================================
