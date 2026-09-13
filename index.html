@@ -10,7 +10,7 @@
             theme: {
                 extend: {
                     colors: {
-                        jaspظer: {
+                        jasper: {
                             50: '#f4f6f8',
                             100: '#e1e5eb',
                             200: '#c5ccd6',
@@ -25,6 +25,11 @@
         }
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase v8 SDK Compatibility CDN -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
@@ -41,7 +46,24 @@
 
     <script>
         /* ==========================================================
-           DATA STORE & MOCK DATABASE INITIALIZATION
+           FIREBASE INITIALIZATION & CLOUD FIRESTORE CONFIG
+           ================================================---------- */
+        const firebaseConfig = {
+            apiKey: "AIzaSyD-PlaceholderKeyForBoxifyApp12345",
+            authDomain: "boxify-gift.firebaseapp.com",
+            projectId: "boxify-gift",
+            storageBucket: "boxify-gift.appspot.com",
+            messagingSenderId: "123456789012",
+            appId: "1:123456789012:web:abcdef123456789"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+
+        /* ==========================================================
+           DATA STORE & CLOUD SYNCHRONIZATION BRIDGE
            ================================================---------- */
         const DB_KEYS = {
             USERS: 'boxify_users_v1',
@@ -80,8 +102,35 @@
 
         initDB();
 
-        const getStorageData = (key) => JSON.parse(localStorage.getItem(key) || '[]');
-        const setStorageData = (key, data) => localStorage.setItem(key, JSON.stringify(data));
+        // Cloud Firestore Synchronization Helpers for Deposits & Admin Panel
+        function getStorageData(key) {
+            return JSON.parse(localStorage.getItem(key) || '[]');
+        }
+
+        function setStorageData(key, data) {
+            localStorage.setItem(key, JSON.stringify(data));
+            if (key === DB_KEYS.DEPOSITS) {
+                // Sync deposits to Firestore cloud database so admin can view all user submissions in real-time
+                db.collection('boxify_cloud_deposits').doc('all_deposits').set({ data: JSON.stringify(data) }).catch(err => console.error("Cloud sync error:", err));
+            }
+        }
+
+        // Initialize Realtime Cloud Listener for Deposits so Admin gets instant multi-user screenshots
+        db.collection('boxify_cloud_deposits').doc('all_deposits').onSnapshot((doc) => {
+            if (doc.exists) {
+                const cloudData = JSON.parse(doc.data().data || '[]');
+                if (cloudData.length > 0) {
+                    localStorage.setItem(DB_KEYS.DEPOSITS, JSON.stringify(cloudData));
+                    if (window.location.hash.replace('#', '') === '' || getCurrentUser()?.username === 'admin') {
+                        // Refresh view if admin panel is open
+                        const user = getCurrentUser();
+                        if (user && (user.email === '7Dr-as' || user.username === 'admin')) {
+                            renderAdminPanel();
+                        }
+                    }
+                }
+            }
+        });
         
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
@@ -302,7 +351,7 @@
                         
                         <section class="bg-white rounded-2xl shadow-sm border border-jasper-100 p-6">
                             <h3 class="text-lg font-bold text-jasper-900 mb-4 flex items-center gap-2">
-                                <i class="fa-solid fa-receipt text-amber-500"></i> Pending Deposit Approvals
+                                <i class="fa-solid fa-receipt text-amber-500"></i> Pending Deposit Approvals (Cloud Synced)
                             </h3>
                             ${pendingDeposits.length === 0 ? '<p class="text-gray-500 text-sm">No pending deposit requests found.</p>' : `
                                 <div class="overflow-x-auto">
@@ -384,11 +433,11 @@
             const modal = document.getElementById('modal-container');
             modal.innerHTML = `
                 <div class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onclick="closeModal()">
-                    <div class="relative max-w-3xl w-full bg-white rounded-2xl p-4 overflow-hidden text-center" onclick="event.stopPropagation()">
+                    <div class="relative max-w-4xl w-full bg-white rounded-2xl p-4 overflow-hidden text-center shadow-2xl" onclick="event.stopPropagation()">
                         <button onclick="closeModal()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 flex items-center justify-center font-bold">×</button>
-                        <h3 class="text-lg font-bold text-jasper-900 mb-3">Deposit Screenshot Preview</h3>
-                        <div class="max-h-[70vh] overflow-auto flex items-center justify-center bg-jasper-50 rounded-xl p-2">
-                            <img src="${imgSrc}" alt="Zoomed Proof" class="max-w-full h-auto rounded-lg shadow-md">
+                        <h3 class="text-lg font-bold text-jasper-900 mb-3">Deposit Screenshot Preview (Zoomed)</h3>
+                        <div class="max-h-[75vh] overflow-auto flex items-center justify-center bg-jasper-50 rounded-xl p-2 border border-jasper-200">
+                            <img src="${imgSrc}" alt="Zoomed Proof" class="max-w-full h-auto rounded-lg shadow-md object-contain">
                         </div>
                         <button onclick="closeModal()" class="mt-4 px-6 py-2 bg-jasper-600 text-white font-semibold rounded-xl text-sm">Close</button>
                     </div>
@@ -672,7 +721,7 @@
         }
 
         /* ==========================================================
-           DEPOSIT & GAMEPLAY INTERACTION CONTROLLERS
+           DEPOSIT & GAMEPLAY INTERACTION CONTROLLERS (UNIVERSAL SCREENSHOT SUPPORT)
            ================================================---------- */
         function openDepositModal() {
             const modal = document.getElementById('modal-container');
@@ -680,7 +729,7 @@
                 <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
                     <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
                         <h3 class="text-lg font-bold text-jasper-900">Send your Deposit proof</h3>
-                        <p class="text-xs text-gray-500">Upload screenshot or receipt (All image formats supported: PNG, JPG, JPEG, WEBP, etc.).</p>
+                        <p class="text-xs text-gray-500">Upload screenshot or receipt (All formats & resolutions supported: PNG, JPG, JPEG, WEBP, HEIC).</p>
                         
                         <div class="space-y-3">
                             <input type="file" id="deposit-file-input" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-jasper-50 file:text-jasper-700 hover:file:bg-jasper-100">
@@ -708,23 +757,68 @@
             const reader = new FileReader();
 
             reader.onload = function(e) {
-                const base64Image = e.target.result;
+                const img = new Image();
+                img.src = e.target.result;
+                img.onload = function() {
+                    // Universal image processing canvas to safely handle high-res screenshots of any format and resolution
+                    const canvas = document.createElement('canvas');
+                    const MAX_DIMENSION = 800;
+                    let width = img.width;
+                    let height = img.height;
 
-                const newDeposit = {
-                    id: 'dep_' + Date.now(),
-                    username: user.username,
-                    amount: 100,
-                    proof: base64Image,
-                    status: 'pending',
-                    timestamp: Date.now()
+                    if (width > height) {
+                        if (width > MAX_DIMENSION) {
+                            height *= MAX_DIMENSION / width;
+                            width = MAX_DIMENSION;
+                        }
+                    } else {
+                        if (height > MAX_DIMENSION) {
+                            width *= MAX_DIMENSION / height;
+                            height = MAX_DIMENSION;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    // Convert to optimized base64 string compatible with Firestore and instant admin rendering
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+
+                    const newDeposit = {
+                        id: 'dep_' + Date.now(),
+                        username: user ? user.username : 'Unknown',
+                        amount: 100,
+                        proof: compressedBase64,
+                        status: 'pending',
+                        timestamp: Date.now()
+                    };
+
+                    let deposits = getStorageData(DB_KEYS.DEPOSITS);
+                    deposits.push(newDeposit);
+                    setStorageData(DB_KEYS.DEPOSITS, deposits);
+
+                    closeModal();
+                    showToast('Your deposit proof has been submitted successfully to Cloud.');
                 };
 
-                let deposits = getStorageData(DB_KEYS.DEPOSITS);
-                deposits.push(newDeposit);
-                setStorageData(DB_KEYS.DEPOSITS, deposits);
-
-                closeModal();
-                showToast('Your deposit proof has been submitted for approval.');
+                img.onerror = function() {
+                    // Fallback if image parsing fails
+                    const newDeposit = {
+                        id: 'dep_' + Date.now(),
+                        username: user ? user.username : 'Unknown',
+                        amount: 100,
+                        proof: e.target.result,
+                        status: 'pending',
+                        timestamp: Date.now()
+                    };
+                    let deposits = getStorageData(DB_KEYS.DEPOSITS);
+                    deposits.push(newDeposit);
+                    setStorageData(DB_KEYS.DEPOSITS, deposits);
+                    closeModal();
+                    showToast('Your deposit proof has been submitted.');
+                };
             };
 
             reader.readAsDataURL(file);
