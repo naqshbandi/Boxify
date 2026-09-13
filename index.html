@@ -30,19 +30,34 @@
         body { font-family: 'Inter', sans-serif; }
         .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
     </style>
+
+    <!-- فائر بیس کی لائبریریز (کلوزنگ ہیڈ ٹیگ سے بالکل اوپر) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 </head>
 <body class="bg-jasper-50 text-jasper-950 min-h-screen flex flex-col antialiased">
 
     <div id="app" class="flex-1 flex flex-col"></div>
-
     <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2"></div>
-
     <div id="modal-container"></div>
 
     <script>
         /* ==========================================================
-           DATA STORE & MOCK DATABASE INITIALIZATION
+           FIREBASE CONFIGURATION & ASYNC DATA STORAGE ENGINE
            ================================================---------- */
+        // یہاں اپنی فائر بیس کنسول کی اصلی تفصیلات درج کریں
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
         const DB_KEYS = {
             USERS: 'boxify_users_v1',
             SESSION: 'boxify_session_v1',
@@ -51,38 +66,69 @@
             LIVE_FEED: 'boxify_live_feed_v1'
         };
 
-        function initDB() {
-            if (!localStorage.getItem(DB_KEYS.USERS)) {
-                const defaultUsers = [
-                    { username: 'admin', email: '7Dr-as', pass: 'admin123', balance: 0, referrer: '', depositsCount: 0, hasPlayed: false },
-                    { username: 'alex99', email: 'alex@gmail.com', pass: 'password123', balance: 150, referrer: '', depositsCount: 1, hasPlayed: false },
-                    { username: 'sarah_g', email: 'sarah@gmail.com', pass: 'password123', balance: 50, referrer: 'alex99', depositsCount: 1, hasPlayed: false }
-                ];
-                localStorage.setItem(DB_KEYS.USERS, JSON.stringify(defaultUsers));
-            }
-            if (!localStorage.getItem(DB_KEYS.DEPOSITS)) {
-                localStorage.setItem(DB_KEYS.DEPOSITS, JSON.stringify([
-                    { id: 'dep_1', username: 'alex99', amount: 100, proof: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="150"><rect width="100%" height="100%" fill="%232563eb"/><text x="50%" y="50%" fill="%23fff" font-size="16" text-anchor="middle" dominant-baseline="middle">Sample Proof</text></svg>', status: 'approved', timestamp: Date.now() - 86400000 },
-                    { id: 'dep_2', username: 'sarah_g', amount: 100, proof: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="150"><rect width="100%" height="100%" fill="%2316a34a"/><text x="50%" y="50%" fill="%23fff" font-size="16" text-anchor="middle" dominant-baseline="middle">Sample Proof 2</text></svg>', status: 'approved', timestamp: Date.now() - 43200000 }
-                ]));
-            }
-            if (!localStorage.getItem(DB_KEYS.WITHDRAWALS)) {
-                localStorage.setItem(DB_KEYS.WITHDRAWALS, JSON.stringify([]));
-            }
-            if (!localStorage.getItem(DB_KEYS.LIVE_FEED)) {
-                localStorage.setItem(DB_KEYS.LIVE_FEED, JSON.stringify([
-                    { user: 'alex99', amount: 45, time: '2 mins ago' },
-                    { user: 'sarah_g', amount: 35, time: '5 mins ago' },
-                    { user: 'david_k', amount: 50, time: '12 mins ago' }
-                ]));
+        async function initDB() {
+            try {
+                const usersSnap = await db.collection("boxify_db").doc(DB_KEYS.USERS).get();
+                if (!usersSnap.exists) {
+                    const defaultUsers = [
+                        { username: 'admin', email: '7Dr-as', pass: 'admin123', balance: 0, referrer: '', depositsCount: 0, hasPlayed: false },
+                        { username: 'alex99', email: 'alex@gmail.com', pass: 'password123', balance: 150, referrer: '', depositsCount: 1, hasPlayed: false },
+                        { username: 'sarah_g', email: 'sarah@gmail.com', pass: 'password123', balance: 50, referrer: 'alex99', depositsCount: 1, hasPlayed: false }
+                    ];
+                    await db.collection("boxify_db").doc(DB_KEYS.USERS).set({ values: defaultUsers });
+                }
+
+                const depSnap = await db.collection("boxify_db").doc(DB_KEYS.DEPOSITS).get();
+                if (!depSnap.exists) {
+                    const defaultDeposits = [
+                        { id: 'dep_1', username: 'alex99', amount: 100, proof: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="150"><rect width="100%" height="100%" fill="%232563eb"/><text x="50%" y="50%" fill="%23fff" font-size="16" text-anchor="middle" dominant-baseline="middle">Sample Proof</text></svg>', status: 'approved', timestamp: Date.now() - 86400000 },
+                        { id: 'dep_2', username: 'sarah_g', amount: 100, proof: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="150"><rect width="100%" height="100%" fill="%2316a34a"/><text x="50%" y="50%" fill="%23fff" font-size="16" text-anchor="middle" dominant-baseline="middle">Sample Proof 2</text></svg>', status: 'approved', timestamp: Date.now() - 43200000 }
+                    ];
+                    await db.collection("boxify_db").doc(DB_KEYS.DEPOSITS).set({ values: defaultDeposits });
+                }
+
+                const witSnap = await db.collection("boxify_db").doc(DB_KEYS.WITHDRAWALS).get();
+                if (!witSnap.exists) {
+                    await db.collection("boxify_db").doc(DB_KEYS.WITHDRAWALS).set({ values: [] });
+                }
+
+                const feedSnap = await db.collection("boxify_db").doc(DB_KEYS.LIVE_FEED).get();
+                if (!feedSnap.exists) {
+                    const defaultFeed = [
+                        { user: 'alex99', amount: 45, time: '2 mins ago' },
+                        { user: 'sarah_g', amount: 35, time: '5 mins ago' },
+                        { user: 'david_k', amount: 50, time: '12 mins ago' }
+                    ];
+                    await db.collection("boxify_db").doc(DB_KEYS.LIVE_FEED).set({ values: defaultFeed });
+                }
+            } catch (e) {
+                console.error("DB Init Error:", e);
             }
         }
 
         initDB();
 
-        const getStorageData = (key) => JSON.parse(localStorage.getItem(key) || '[]');
-        const setStorageData = (key, data) => localStorage.setItem(key, JSON.stringify(data));
-        
+        async function getStorageData(key) {
+            try {
+                const doc = await db.collection("boxify_db").doc(key).get();
+                if (doc.exists) {
+                    return doc.data().values || [];
+                }
+                return [];
+            } catch (e) {
+                console.error("Read Error:", e);
+                return [];
+            }
+        }
+
+        async function setStorageData(key, data) {
+            try {
+                await db.collection("boxify_db").doc(key).set({ values: data });
+            } catch (e) {
+                console.error("Write Error:", e);
+            }
+        }
+
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
@@ -110,16 +156,16 @@
             else localStorage.removeItem(DB_KEYS.SESSION);
         }
 
-        function router() {
+        async function router() {
             const user = getCurrentUser();
             const hash = window.location.hash.replace('#', '') || 'home';
 
             if (!user) {
                 renderAuthPage();
             } else if (user.email === '7Dr-as' || user.username === 'admin') {
-                renderAdminPanel();
+                await renderAdminPanel();
             } else {
-                renderDashboard(hash);
+                await renderDashboard(hash);
             }
         }
 
@@ -219,7 +265,7 @@
             }
         }
 
-        function handleSignIn(e) {
+        async function handleSignIn(e) {
             e.preventDefault();
             const identity = document.getElementById('signin-identity').value.trim();
             const pass = document.getElementById('signin-password').value.trim();
@@ -232,7 +278,7 @@
                 return;
             }
 
-            const users = getStorageData(DB_KEYS.USERS);
+            const users = await getStorageData(DB_KEYS.USERS);
             const found = users.find(u => (u.email === identity || u.username === identity) && u.pass === pass);
 
             if (found) {
@@ -244,14 +290,14 @@
             }
         }
 
-        function handleSignUp(e) {
+        async function handleSignUp(e) {
             e.preventDefault();
             const username = document.getElementById('signup-username').value.trim();
             const email = document.getElementById('signup-email').value.trim();
             const pass = document.getElementById('signup-password').value.trim();
             const referrer = document.getElementById('signup-referral').value.trim();
 
-            const users = getStorageData(DB_KEYS.USERS);
+            const users = await getStorageData(DB_KEYS.USERS);
             if (users.some(u => u.username === username)) {
                 showToast('Username is already taken. Choose another.', 'error');
                 return;
@@ -273,7 +319,7 @@
             };
 
             users.push(newUser);
-            setStorageData(DB_KEYS.USERS, users);
+            await setStorageData(DB_KEYS.USERS, users);
             setCurrentUser(newUser);
             showToast('Account created successfully!');
             router();
@@ -282,12 +328,12 @@
         /* ==========================================================
            2. ADMIN PANEL
            ================================================---------- */
-        function renderAdminPanel() {
-            const deposits = getStorageData(DB_KEYS.DEPOSITS);
+        async function renderAdminPanel() {
+            const deposits = await getStorageData(DB_KEYS.DEPOSITS);
             const pendingDeposits = deposits.filter(d => d.status === 'pending');
-            const withdrawals = getStorageData(DB_KEYS.WITHDRAWALS);
+            const withdrawals = await getStorageData(DB_KEYS.WITHDRAWALS);
             const pendingWithdrawals = withdrawals.filter(w => w.status === 'pending');
-            const users = getStorageData(DB_KEYS.USERS);
+            const users = await getStorageData(DB_KEYS.USERS);
 
             const app = document.getElementById('app');
             app.innerHTML = `
@@ -400,44 +446,44 @@
             document.getElementById('modal-container').innerHTML = '';
         }
 
-        function approveDeposit(depId) {
-            let deposits = getStorageData(DB_KEYS.DEPOSITS);
+        async function approveDeposit(depId) {
+            let deposits = await getStorageData(DB_KEYS.DEPOSITS);
             const dep = deposits.find(d => d.id === depId);
             if (!dep) return;
 
             dep.status = 'approved';
-            setStorageData(DB_KEYS.DEPOSITS, deposits);
+            await setStorageData(DB_KEYS.DEPOSITS, deposits);
 
-            let users = getStorageData(DB_KEYS.USERS);
+            let users = await getStorageData(DB_KEYS.USERS);
             const user = users.find(u => u.username === dep.username);
             if (user) {
                 user.balance = (user.balance || 0) + dep.amount;
                 user.depositsCount = (user.depositsCount || 0) + 1;
-                user.hasPlayed = false; // Reset game lock so user can play once after new deposit approval
-                setStorageData(DB_KEYS.USERS, users);
+                user.hasPlayed = false;
+                await setStorageData(DB_KEYS.USERS, users);
             }
 
             showToast('Deposit approved successfully!');
             renderAdminPanel();
         }
 
-        function rejectDeposit(depId) {
-            let deposits = getStorageData(DB_KEYS.DEPOSITS);
+        async function rejectDeposit(depId) {
+            let deposits = await getStorageData(DB_KEYS.DEPOSITS);
             const dep = deposits.find(d => d.id === depId);
             if (dep) {
                 dep.status = 'rejected';
-                setStorageData(DB_KEYS.DEPOSITS, deposits);
+                await setStorageData(DB_KEYS.DEPOSITS, deposits);
                 showToast('Deposit rejected.', 'error');
                 renderAdminPanel();
             }
         }
 
-        function processWithdrawal(wId) {
-            let withdrawals = getStorageData(DB_KEYS.WITHDRAWALS);
+        async function processWithdrawal(wId) {
+            let withdrawals = await getStorageData(DB_KEYS.WITHDRAWALS);
             const w = withdrawals.find(item => item.id === wId);
             if (w) {
                 w.status = 'processed';
-                setStorageData(DB_KEYS.WITHDRAWALS, withdrawals);
+                await setStorageData(DB_KEYS.WITHDRAWALS, withdrawals);
                 showToast('Withdrawal processed successfully!');
                 renderAdminPanel();
             }
@@ -452,9 +498,9 @@
         /* ==========================================================
            3. USER DASHBOARD & GAMEPLAY
            ================================================---------- */
-        function renderDashboard(subView = 'home') {
+        async function renderDashboard(subView = 'home') {
             const user = getCurrentUser();
-            const users = getStorageData(DB_KEYS.USERS);
+            const users = await getStorageData(DB_KEYS.USERS);
             const currentUserData = users.find(u => u.username === user.username) || user;
 
             const app = document.getElementById('app');
@@ -499,7 +545,7 @@
 
                         ${subView === 'home' ? renderHomeView(currentUserData) : ''}
                         ${subView === 'referrals' ? renderReferralsView(currentUserData, users) : ''}
-                        ${subView === 'withdraw' ? renderWithdrawView(currentUserData, users) : ''}
+                        ${subView === 'withdraw' ? await renderWithdrawView(currentUserData, users) : ''}
                         ${subView === 'terms' ? renderTermsView() : ''}
 
                     </main>
@@ -600,11 +646,11 @@
             `;
         }
 
-        function renderWithdrawView(user, users) {
+        async function renderWithdrawView(user, users) {
             const userRefs = users.filter(u => u.referrer === user.username);
             const depositingRefs = userRefs.filter(u => u.depositsCount > 0).length;
-            const myRefLink = `${window.location.origin}${window.location.pathname}?ref=${user.username}`;
-            const userWithdrawals = getStorageData(DB_KEYS.WITHDRAWALS).filter(w => w.username === user.username);
+            const allWithdrawals = await getStorageData(DB_KEYS.WITHDRAWALS);
+            const userWithdrawals = allWithdrawals.filter(w => w.username === user.username);
 
             return `
                 <div class="bg-white rounded-2xl shadow-sm border border-jasper-100 p-6 space-y-6 max-w-xl mx-auto">
@@ -680,7 +726,7 @@
                 <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
                     <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
                         <h3 class="text-lg font-bold text-jasper-900">Send your Deposit proof</h3>
-                        <p class="text-xs text-gray-500">Upload screenshot or receipt (All image formats supported: PNG, JPG, JPEG, WEBP, etc.).</p>
+                        <p class="text-xs text-gray-500">Upload screenshot or receipt (All image formats supported).</p>
                         
                         <div class="space-y-3">
                             <input type="file" id="deposit-file-input" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-jasper-50 file:text-jasper-700 hover:file:bg-jasper-100">
@@ -707,7 +753,7 @@
             const file = fileInput.files[0];
             const reader = new FileReader();
 
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 const base64Image = e.target.result;
 
                 const newDeposit = {
@@ -719,9 +765,9 @@
                     timestamp: Date.now()
                 };
 
-                let deposits = getStorageData(DB_KEYS.DEPOSITS);
+                let deposits = await getStorageData(DB_KEYS.DEPOSITS);
                 deposits.push(newDeposit);
-                setStorageData(DB_KEYS.DEPOSITS, deposits);
+                await setStorageData(DB_KEYS.DEPOSITS, deposits);
 
                 closeModal();
                 showToast('Your deposit proof has been submitted for approval.');
@@ -736,9 +782,9 @@
             openedBoxes: []
         };
 
-        function handleBoxClick(index) {
+        async function handleBoxClick(index) {
             const user = getCurrentUser();
-            const users = getStorageData(DB_KEYS.USERS);
+            const users = await getStorageData(DB_KEYS.USERS);
             const dbUser = users.find(u => u.username === user.username) || user;
 
             if (dbUser.hasPlayed) {
@@ -791,25 +837,25 @@
             `;
         }
 
-        function claimReward(reward) {
+        async function claimReward(reward) {
             const user = getCurrentUser();
-            let users = getStorageData(DB_KEYS.USERS);
+            let users = await getStorageData(DB_KEYS.USERS);
             const dbUser = users.find(u => u.username === user.username);
             if (dbUser) {
                 dbUser.balance = (dbUser.balance || 0) + reward;
-                setStorageData(DB_KEYS.USERS, users);
+                await setStorageData(DB_KEYS.USERS, users);
                 setCurrentUser(dbUser);
             }
             closeModal();
             showToast(`Successfully added Rs. ${reward} to your balance!`);
             
-            let feed = getStorageData(DB_KEYS.LIVE_FEED);
+            let feed = await getStorageData(DB_KEYS.LIVE_FEED);
             feed.unshift({ user: user.username, amount: reward, time: 'Just now' });
-            setStorageData(DB_KEYS.LIVE_FEED, feed);
+            await setStorageData(DB_KEYS.LIVE_FEED, feed);
             renderLiveFeedTicker();
         }
 
-        function autoRevealRemainingBoxes() {
+        async function autoRevealRemainingBoxes() {
             const revealValues = [0, 0, 50, 50, 10, 10, 100, 100, 500, 500, 1000, 1000];
             revealValues.sort(() => Math.random() - 0.5);
 
@@ -829,20 +875,19 @@
                 }, idx * 1000);
             });
 
-            // Lock game permanently for this deposit cycle
             const user = getCurrentUser();
-            let users = getStorageData(DB_KEYS.USERS);
+            let users = await getStorageData(DB_KEYS.USERS);
             const dbUser = users.find(u => u.username === user.username);
             if (dbUser) {
                 dbUser.hasPlayed = true;
-                setStorageData(DB_KEYS.USERS, users);
+                await setStorageData(DB_KEYS.USERS, users);
                 setCurrentUser(dbUser);
             }
             gameState.picksLeft = 3;
             gameState.openedBoxes = [];
         }
 
-        function handleWithdrawSubmit(e, depositingRefs) {
+        async function handleWithdrawSubmit(e, depositingRefs) {
             e.preventDefault();
             
             if (depositingRefs < 5) {
@@ -865,9 +910,9 @@
                 timestamp: Date.now()
             };
 
-            let withdrawals = getStorageData(DB_KEYS.WITHDRAWALS);
+            let withdrawals = await getStorageData(DB_KEYS.WITHDRAWALS);
             withdrawals.push(newWithdrawal);
-            setStorageData(DB_KEYS.WITHDRAWALS, withdrawals);
+            await setStorageData(DB_KEYS.WITHDRAWALS, withdrawals);
 
             showToast('Withdrawal request submitted successfully!');
             window.location.hash = 'home';
@@ -891,11 +936,11 @@
             `;
         }
 
-        function renderLiveFeedTicker() {
+        async function renderLiveFeedTicker() {
             const container = document.getElementById('live-feed-ticker');
             if (!container) return;
 
-            const feed = getStorageData(DB_KEYS.LIVE_FEED);
+            const feed = await getStorageData(DB_KEYS.LIVE_FEED);
             container.innerHTML = feed.slice(0, 5).map(item => `
                 <div class="flex justify-between items-center p-3 bg-jasper-50 rounded-xl text-sm">
                     <span class="font-medium text-jasper-900"><i class="fa-solid fa-user-circle text-jasper-600 mr-2"></i> ${item.user} won <strong class="text-emerald-600">Rs. ${item.amount}</strong></span>
@@ -904,21 +949,9 @@
             `).join('');
         }
 
-        setInterval(() => {
-            const randomUsers = ['zain_pk', 'ahmed_99', 'bilal_x', 'maria_dev', 'usman_11', 'hamza_k'];
-            const randomAmounts = [30, 45, 50, 35, 40, 55];
-            const rUser = randomUsers[Math.floor(Math.random() * randomUsers.length)];
-            const rAmt = randomAmounts[Math.floor(Math.random() * randomAmounts.length)];
-
-            let feed = getStorageData(DB_KEYS.LIVE_FEED);
-            feed.unshift({ user: rUser, amount: rAmt, time: 'Just now' });
-            setStorageData(DB_KEYS.LIVE_FEED, feed);
-            renderLiveFeedTicker();
-        }, 5000);
-
-        window.addEventListener('DOMContentLoaded', () => {
-            router();
-            setInterval(renderLiveFeedTicker, 2000);
+        window.addEventListener('DOMContentLoaded', async () => {
+            await router();
+            await renderLiveFeedTicker();
         });
     </script>
 </body>
