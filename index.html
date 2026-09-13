@@ -1,15 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
-
-   
-
-
-    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><h2>Boxify Gift</h2></title>
+    <title>Boxify Gift</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -85,26 +79,9 @@
         }
 
         initDB();
+
         const getStorageData = (key) => JSON.parse(localStorage.getItem(key) || '[]');
         const setStorageData = (key, data) => localStorage.setItem(key, JSON.stringify(data));
-// ==========================================
-// FIREBASE SYNCHRONIZED DATABASE ENGINE
-// ==========================================
-
-const DB_KEYS = {
-    USERS: 'boxify_users_v1',
-    DEPOSITS: 'boxify_deposits_v1',
-    WITHDRAWALS: 'boxify_withdrawals_v1',
-    SETTINGS: 'boxify_settings_v1',
-    LIVE_FEED: 'boxify_live_feed_v1'
-};
-
-// فائر بیس سے ڈیٹا رئیل ٹائم یا گیٹ کرنے کا فنکشن
-
-
-
-
-       
         
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
@@ -159,7 +136,7 @@ const DB_KEYS = {
             app.innerHTML = `
                 <div class="flex-1 flex items-center justify-center p-4 sm:p-6 bg-gradient-to-br from-jasper-100 via-white to-jasper-100">
                     <div class="w-full max-w-md bg-white rounded-2xl shadow-xl border border-jasper-100 p-8">
-                        <div colass="text-center mb-6">
+                        <div class="text-center mb-6">
                             <h2 class="text-3xl font-bold tracking-tight text-jasper-900">Boxify Gift</h2>
                             <p class="text-sm text-gray-500 mt-1">Sleek rewarding experience & mystery boxes</p>
                         </div>
@@ -548,13 +525,13 @@ const DB_KEYS = {
                     <div class="bg-white/10 rounded-xl p-4 backdrop-blur-sm grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
                         <div>
                             <span class="block text-xs text-jasper-200 uppercase font-semibold">Account Type</span>
-                            <span class="font-bold">United Bank Limited</span>
+                            <span class="font-bold">EasyPaisa</span>
                         </div>
                         <div>
                             <span class="block text-xs text-jasper-200 uppercase font-semibold">Account Number</span>
                             <div class="flex items-center gap-2">
-                                <span class="font-bold">PK19UNIL0109000274244182</span>
-                                <button onclick="copyToClipboard('PK19UNIL0109000274244182', 'Account Number')" class="text-amber-300 hover:text-white"><i class="fa-solid fa-copy"></i></button>
+                                <span class="font-bold">03074591741</span>
+                                <button onclick="copyToClipboard('03074591741', 'Account Number')" class="text-amber-300 hover:text-white"><i class="fa-solid fa-copy"></i></button>
                             </div>
                         </div>
                         <div>
