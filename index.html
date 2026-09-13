@@ -741,7 +741,26 @@
             `;
         }
 
-        
+       function openDepositModal() {
+    const modal = document.getElementById('modal-container');
+    modal.innerHTML = `
+        <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
+                <h3 class="text-lg font-bold text-jasper-900">Send your Deposit proof</h3>
+                <p class="text-xs text-gray-500">Upload screenshot or receipt (All formats supported).</p>
+                
+                <div class="space-y-3">
+                    <input type="file" id="deposit-file-input" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-jasper-50 file:text-jasper-700 hover:file:bg-jasper-100">
+                </div>
+
+                <div class="flex gap-3 pt-2">
+                    <button onclick="closeModal()" class="flex-1 py-2.5 bg-gray-100 text-gray-700 font-semibold rounded-xl text-sm">Cancel</button>
+                    <button onclick="submitDepositProof()" class="flex-1 py-2.5 bg-jasper-600 hover:bg-jasper-700 text-white font-semibold rounded-xl text-sm">Submit</button>
+                </div>
+            </div>
+        </div>
+    `;
+}
 
 async function submitDepositProof() {
     const user = getCurrentUser();
@@ -753,52 +772,72 @@ async function submitDepositProof() {
     }
 
     const file = fileInput.files[0];
-    showToast('Uploading proof, please wait...', 'success');
+    const reader = new FileReader();
 
-    try {
-        // فائر بیس سٹوریج کے ذریعے بڑی اور ہر فارمیٹ کی تصویر کو اپ لوڈ کرنے کا پروفیشنل طریقہ
-        const storageRef = firebase.storage().ref();
-        const fileRef = storageRef.child(`deposits/${Date.now()}_${file.name}`);
-        const snapshot = await fileRef.put(file);
-        const downloadURL = await snapshot.ref.getDownloadURL();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.src = e.target.result;
+        img.onload = async function() {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 600;
+            const MAX_HEIGHT = 600;
+            let width = img.width;
+            let height = img.height;
 
-        const newDeposit = {
-            id: 'dep_' + Date.now(),
-            username: user.username,
-            amount: 100,
-            proof: downloadURL,
-            status: 'pending',
-            timestamp: Date.now()
-        };
-
-        let deposits = await getStorageData(DB_KEYS.DEPOSITS);
-        deposits.push(newDeposit);
-        await setStorageData(DB_KEYS.DEPOSITS, deposits);
-
-        closeModal();
-        showToast('Your deposit proof has been submitted successfully.');
-    } catch (err) {
-        console.error("Storage Upload Error:", err);
-        showToast('Failed to upload image. Make sure Firebase Storage is enabled.', 'error');
-    }
-}
-
+            if (width > height) {
+                if (width > MAX_WIDTH) {
+                    height *= MAX_WIDTH / width;
+                    width = MAX_WIDTH;
+                }
+            } else {
+                if (height > MAX_HEIGHT) {
+                    width *= MAX_HEIGHT / height;
+                    height = MAX_HEIGHT;
+                }
+            }
 
             canvas.width = width;
             canvas.height = height;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
 
-            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.75);
 
+            const depositId = 'dep_' + Date.now();
             const newDeposit = {
-                id: 'dep_' + Date.now(),
-                username: user.username,
+                id: depositId,
+                username: user ? user.username : 'Unknown',
                 amount: 100,
                 proof: compressedBase64,
                 status: 'pending',
                 timestamp: Date.now()
             };
+
+            try {
+                // براہ راست فائر بیس ڈیٹا بیس میں سیو کرنے کا طریقہ تاکہ ایڈمن پینل کو فورا نظر آئے
+                if (typeof db !== 'undefined') {
+                    await db.collection('deposits').doc(depositId).set(newDeposit);
+                } else {
+                    // اگر گلوبل گیٹ/سیٹ فنکشن استعمال ہو رہا ہے جو فائر بیس سے جڑا ہے
+                    let deposits = await getStorageData(DB_KEYS.DEPOSITS) || [];
+                    deposits.push(newDeposit);
+                    await setStorageData(DB_KEYS.DEPOSITS, deposits);
+                }
+
+                closeModal();
+                showToast('Your deposit proof has been submitted successfully.');
+            } catch (err) {
+                console.error("Deposit submission error:", err);
+                showToast('Failed to upload. Try a smaller image.', 'error');
+            }
+        };
+    };
+
+    reader.readAsDataURL(file);
+}
+ 
+
+
 
             try {
                 let deposits = await getStorageData(DB_KEYS.DEPOSITS);
