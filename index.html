@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>باکسفائی - سکرین شاٹ اپ لوڈ سسٹم</title>
-    <!-- Firebase App SDK -->
+    <title>ایپ - فائر بیس سنک کے ساتھ</title>
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <!-- Firebase Realtime Database SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
         body { font-family: Tahoma, sans-serif; background: #f4f4f9; margin: 0; padding: 20px; text-align: right; }
@@ -48,15 +47,15 @@
 </div>
 
 <script>
-    // آپ کی اصل فائر بیس کنفیگریشن
+    // آپ کی فائر بیس کنفیگریشن (Firebase Realtime Database)
     const firebaseConfig = {
-      apiKey: "AIzaSyAZTA87zhyJRHaCIKVDEG36E9wLR-Qnt80",
-      authDomain: "boxifyapp-6f63f.firebaseapp.com",
-      databaseURL: "https://boxifyapp-6f63f-default-rtdb.firebaseio.com", // یہاں آپ کے پروجیکٹ کا رئیل ٹائم ڈیٹا بیس یو آر ایل ہے
-      projectId: "boxifyapp-6f63f",
-      storageBucket: "boxifyapp-6f63f.firebasestorage.app",
-      messagingSenderId: "845814985925",
-      appId: "1:845814985925:web:b7583e2feed78b4ea82cac"
+        apiKey: "AIzaSyDummyKeyForNow-ReplaceWithYours",
+        authDomain: "your-app-default-rtdb.firebaseio.com",
+        databaseURL: "https://your-app-default-rtdb.firebaseio.com",
+        projectId: "your-app",
+        storageBucket: "your-app.appspot.com",
+        messagingSenderId: "123456789",
+        appId: "1:123456789:web:abcdef"
     };
 
     // فائر بیس انیشیলাইزیشن
@@ -74,12 +73,12 @@
             return;
         }
         currentUser = user;
-        localStorage.setItem('boxify_user', currentUser);
+        localStorage.setItem('chat_app_user', currentUser);
         loadDashboard();
     }
 
     function handleLogout() {
-        localStorage.removeItem('boxify_user');
+        localStorage.removeItem('chat_app_user');
         currentUser = null;
         document.getElementById('dashboard').classList.add('hidden');
         document.getElementById('auth-section').classList.remove('hidden');
@@ -114,6 +113,7 @@
         reader.onload = function(e) {
             const base64Image = e.target.result;
             
+            // فائر بیس ڈیٹا بیس میں ڈیٹا محفوظ کرنا
             const newPostRef = db.ref('screenshots').push();
             newPostRef.set({
                 username: currentUser,
@@ -121,9 +121,9 @@
                 timestamp: Date.now()
             }, (error) => {
                 if (error) {
-                    alert('اپ لوڈ کرنے میں خرابی: ' + error.message);
+                    alert('اپ لوڈ کرنے میں خرابی پیش آئی!');
                 } else {
-                    alert('سکرین شاٹ کامیابی سے کلاؤڈ پر اپ لوڈ ہو گیا!');
+                    alert('سکرین شاٹ کامیابی سے فائر بیس پر اپ لوڈ ہو گیا!');
                     fileInput.value = '';
                 }
             });
@@ -133,6 +133,7 @@
 
     function fetchAllScreenshots() {
         const listDiv = document.getElementById('admin-screenshots-list');
+        // فائر بیس سے رئیل ٹائم ڈیٹا سنک (Realtime listener)
         db.ref('screenshots').on('value', (snapshot) => {
             listDiv.innerHTML = '';
             const data = snapshot.val();
@@ -155,8 +156,9 @@
         });
     }
 
+    // آٹو لاگ ان چیک
     window.onload = function() {
-        const savedUser = localStorage.G || localStorage.getItem('boxify_user');
+        const savedUser = localStorage.getItem('chat_app_user');
         if (savedUser) {
             currentUser = savedUser;
             loadDashboard();
