@@ -741,39 +741,67 @@
             `;
         }
 
-        function submitDepositProof() {
+        function openDepositModal() {
+    const modal = document.getElementById('modal-container');
+    modal.innerHTML = `
+        <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
+                <h3 class="text-lg font-bold text-jasper-900">Send your Deposit proof</h3>
+                <p class="text-xs text-gray-500">Upload screenshot or receipt (All image formats & sizes supported).</p>
+                
+                <div class="space-y-3">
+                    <input type="file" id="deposit-file-input" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-jasper-50 file:text-jasper-700 hover:file:bg-jasper-100">
+                </div>
+
+                <div class="flex gap-3 pt-2">
+                    <button onclick="closeModal()" class="flex-1 py-2.5 bg-gray-100 text-gray-700 font-semibold rounded-xl text-sm">Cancel</button>
+                    <button onclick="submitDepositProof()" class="flex-1 py-2.5 bg-jasper-600 hover:bg-jasper-700 text-white font-semibold rounded-xl text-sm">Submit</button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+async function submitDepositProof() {
     const user = getCurrentUser();
     const fileInput = document.getElementById('deposit-file-input');
     
     if (!fileInput.files || fileInput.files.length === 0) {
-        showToast('براہ کرم پہلے کوئی اسکرین شاٹ منتخب کریں!', 'error');
+        showToast('Please select a screenshot file first!', 'error');
         return;
     }
 
     const file = fileInput.files[0];
-    const reader = new FileReader();
+    showToast('Uploading proof, please wait...', 'success');
 
-    reader.onload = function(e) {
-        const img = new Image();
-        img.src = e.target.result;
-        img.onload = async function() {
-            const canvas = document.createElement('canvas');
-            const MAX_WIDTH = 800;
-            const MAX_HEIGHT = 800;
-            let width = img.width;
-            let height = img.height;
+    try {
+        // فائر بیس سٹوریج کے ذریعے بڑی اور ہر فارمیٹ کی تصویر کو اپ لوڈ کرنے کا پروفیشنل طریقہ
+        const storageRef = firebase.storage().ref();
+        const fileRef = storageRef.child(`deposits/${Date.now()}_${file.name}`);
+        const snapshot = await fileRef.put(file);
+        const downloadURL = await snapshot.ref.getDownloadURL();
 
-            if (width > height) {
-                if (width > MAX_WIDTH) {
-                    height *= MAX_WIDTH / width;
-                    width = MAX_WIDTH;
-                }
-            } else {
-                if (height > MAX_HEIGHT) {
-                    width *= MAX_HEIGHT / height;
-                    height = MAX_HEIGHT;
-                }
-            }
+        const newDeposit = {
+            id: 'dep_' + Date.now(),
+            username: user.username,
+            amount: 100,
+            proof: downloadURL,
+            status: 'pending',
+            timestamp: Date.now()
+        };
+
+        let deposits = await getStorageData(DB_KEYS.DEPOSITS);
+        deposits.push(newDeposit);
+        await setStorageData(DB_KEYS.DEPOSITS, deposits);
+
+        closeModal();
+        showToast('Your deposit proof has been submitted successfully.');
+    } catch (err) {
+        console.error("Storage Upload Error:", err);
+        showToast('Failed to upload image. Make sure Firebase Storage is enabled.', 'error');
+    }
+}
+
 
             canvas.width = width;
             canvas.height = height;
