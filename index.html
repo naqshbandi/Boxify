@@ -277,7 +277,7 @@
                 signupForm.classList.remove('hidden');
                 signinForm.classList.add('hidden');
                 signupTab.className = "flex-1 py-2 text-sm font-semibold rounded-lg bg-white text-jasper-900 shadow-sm";
-                signinTab.className = "flex-1 py-2 text-sm font-semibold rounded-lg text-gray-500";
+                signupTab.className = "flex-1 py-2 text-sm font-semibold rounded-lg text-gray-500";
             }
         }
 
@@ -348,6 +348,7 @@
                 openedBoxes: 0, 
                 activeDeposit: 0 
             };
+            
             cloudState.users.push(newUser);
             syncCloudUsers();
             setCurrentUser(newUser);
@@ -371,7 +372,7 @@
                     </header>
                     <main class="flex-1 max-w-7xl w-full mx-auto p-6 space-y-8">
                         <section class="bg-white rounded-2xl shadow-sm border border-jasper-100 p-6">
-                            <h3 class="text-lg font-bold text-jasper-900 mb-4">Pending Deposit Screenshots (All Image Formats)</h3>
+                            <h3 class="text-lg font-bold text-jasper-900 mb-4">Pending Deposit Requests</h3>
                             ${pendingDeposits.length === 0 ? '<p class="text-gray-500 text-sm">No pending deposit requests.</p>' : `
                                 <div class="overflow-x-auto">
                                     <table class="w-full text-left text-sm">
@@ -412,6 +413,7 @@
                                             <tr>
                                                 <th class="p-3">Username</th>
                                                 <th class="p-3">Amount</th>
+                                                <th class="p-3">Account Holder Name</th>
                                                 <th class="p-3">Account Details</th>
                                                 <th class="p-3">Action</th>
                                             </tr>
@@ -421,6 +423,7 @@
                                                 <tr>
                                                     <td class="p-3 font-medium">${w.username}</td>
                                                     <td class="p-3 font-bold text-emerald-600">Rs. ${w.amount}</td>
+                                                    <td class="p-3 font-semibold text-jasper-900">${w.accountName || 'N/A'}</td>
                                                     <td class="p-3 text-xs text-gray-600">${w.accountDetails}</td>
                                                     <td class="p-3 flex gap-2">
                                                         <button onclick="approveWithdraw('${w.id}')" class="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-semibold">Approve</button>
@@ -602,8 +605,12 @@
                         <input type="number" id="withdraw-amount" placeholder="Enter amount" class="w-full px-4 py-2.5 rounded-xl border border-jasper-200 text-sm">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold uppercase text-gray-600 mb-1">Easypaisa / Bank Details</label>
-                        <input type="text" id="withdraw-details" placeholder="Account Title & Number" class="w-full px-4 py-2.5 rounded-xl border border-jasper-200 text-sm">
+                        <label class="block text-xs font-semibold uppercase text-gray-600 mb-1">Account Holder Name</label>
+                        <input type="text" id="withdraw-name" placeholder="Enter account holder name" class="w-full px-4 py-2.5 rounded-xl border border-jasper-200 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-gray-600 mb-1">Easypaisa / Bank Details (Number)</label>
+                        <input type="text" id="withdraw-details" placeholder="Account Number" class="w-full px-4 py-2.5 rounded-xl border border-jasper-200 text-sm">
                     </div>
                     <button onclick="submitWithdraw(${canWithdraw})" class="w-full py-3 ${canWithdraw ? 'bg-jasper-600 hover:bg-jasper-700 text-white' : 'bg-gray-300 text-gray-500 cursor-not-allowed'} font-semibold rounded-xl text-sm">Request Withdrawal</button>
                 </div>
@@ -615,8 +622,15 @@
             modal.innerHTML = `
                 <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
                     <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
-                        <h3 class="text-lg font-bold text-jasper-900">Upload Deposit Screenshot (All Formats)</h3>
-                        <input type="file" id="deposit-file-input" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-jasper-50 file:text-jasper-700">
+                        <h3 class="text-lg font-bold text-jasper-900">Upload Deposit Screenshot</h3>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-gray-600 mb-1">Deposit Amount (Rs)</label>
+                            <input type="number" id="deposit-amount-input" placeholder="e.g. 200, 500, 1000" class="w-full px-4 py-2.5 rounded-xl border border-jasper-200 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase text-gray-600 mb-1">Screenshot Proof</label>
+                            <input type="file" id="deposit-file-input" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-jasper-50 file:text-jasper-700">
+                        </div>
                         <div class="flex gap-3 pt-2">
                             <button onclick="closeModal()" class="flex-1 py-2.5 bg-gray-100 text-gray-700 rounded-xl text-sm">Cancel</button>
                             <button onclick="submitDepositProof()" class="flex-1 py-2.5 bg-jasper-600 text-white rounded-xl text-sm font-semibold">Submit</button>
@@ -628,8 +642,15 @@
 
         function submitDepositProof() {
             const user = getCurrentUser();
+            const amountInput = document.getElementById('deposit-amount-input');
             const fileInput = document.getElementById('deposit-file-input');
             
+            const amount = parseFloat(amountInput.value);
+            if (!amount || amount <= 0) {
+                showToast('Please enter a valid deposit amount!', 'error');
+                return;
+            }
+
             if (!fileInput.files || fileInput.files.length === 0) {
                 showToast('Please select a screenshot file!', 'error');
                 return;
@@ -642,7 +663,7 @@
                 const newDeposit = {
                     id: 'dep_' + Date.now(),
                     username: user ? user.username : 'Unknown',
-                    amount: 100,
+                    amount: amount,
                     proof: e.target.result,
                     status: 'pending',
                     timestamp: Date.now()
@@ -666,10 +687,15 @@
             const user = getCurrentUser();
             const dbUser = cloudState.users.find(u => u.username === user.username);
             const amount = parseFloat(document.getElementById('withdraw-amount').value);
+            const accountName = document.getElementById('withdraw-name').value.trim();
             const details = document.getElementById('withdraw-details').value.trim();
 
             if (!amount || amount <= 0 || amount > (dbUser.balance || 0)) {
                 showToast('Invalid withdraw amount!', 'error');
+                return;
+            }
+            if (!accountName) {
+                showToast('Please provide account holder name!', 'error');
                 return;
             }
             if (!details) {
@@ -685,6 +711,7 @@
                 id: 'w_' + Date.now(),
                 username: dbUser.username,
                 amount: amount,
+                accountName: accountName,
                 accountDetails: details,
                 status: 'pending',
                 timestamp: Date.now()
