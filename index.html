@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boxify Gift - Full Cloud Configured</title>
+    <title>Boxify Gift - Complete Firebase Configured</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -60,9 +60,6 @@
         }
         const db = firebase.firestore();
 
-        /* ==========================================================
-           2. CLOUD FIRESTORE SYNCHRONIZATION ENGINE
-           ================================================---------- */
         const DB_KEYS = {
             SESSION: 'boxify_session_v1'
         };
@@ -70,7 +67,7 @@
         let cloudState = {
             users: [],
             deposits: [],
-            withdrawals: []
+            withdraws: []
         };
 
         function initCloudSync(callback) {
@@ -79,11 +76,11 @@
                     cloudState.users = JSON.parse(doc.data().data || '[]');
                 } else {
                     cloudState.users = [
-                        { username: 'admin', email: '7Dr-as', pass: 'admin123', balance: 0, referrer: '', depositsCount: 0, hasPlayed: false },
-                        { username: 'alex99', email: 'alex@gmail.com', pass: 'password123', balance: 150, referrer: '', depositsCount: 1, hasPlayed: false }
+                        { username: 'admin', email: '7Dr-as', pass: 'admin123', balance: 0, referrer: '', referralsCount: 0, depositsCount: 0, canPlay: false, openedBoxes: 0, activeDeposit: 0 }
                     ];
                     syncCloudUsers();
                 }
+                updateCurrentSessionUser();
                 if (callback) callback();
             });
 
@@ -96,6 +93,26 @@
                 }
                 if (callback) callback();
             });
+
+            db.collection('boxify_cloud_withdraws').doc('all_withdraws').onSnapshot((doc) => {
+                if (doc.exists) {
+                    cloudState.withdraws = JSON.parse(doc.data().data || '[]');
+                } else {
+                    cloudState.withdraws = [];
+                    syncCloudWithdraws();
+                }
+                if (callback) callback();
+            });
+        }
+
+        function updateCurrentSessionUser() {
+            const current = getCurrentUser();
+            if (current && current.username !== 'admin') {
+                const freshUser = cloudState.users.find(u => u.username === current.username);
+                if (freshUser) {
+                    setCurrentUser(freshUser);
+                }
+            }
         }
 
         function syncCloudUsers() {
@@ -110,6 +127,13 @@
                 data: JSON.stringify(cloudState.deposits),
                 updatedAt: Date.now()
             }).catch(err => console.error("Deposit cloud sync error:", err));
+        }
+
+        function syncCloudWithdraws() {
+            db.collection('boxify_cloud_withdraws').doc('all_withdraws').set({
+                data: JSON.stringify(cloudState.withdraws),
+                updatedAt: Date.now()
+            }).catch(err => console.error("Withdraw cloud sync error:", err));
         }
 
         function showToast(message, type = 'success') {
@@ -147,7 +171,7 @@
         window.addEventListener('hashchange', router);
 
         /* ==========================================================
-           3. AUTHENTICATION MODULE (CLOUD-BACKED)
+           2. AUTHENTICATION MODULE
            ================================================---------- */
         function renderAuthPage() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -274,7 +298,25 @@
                 return;
             }
 
-            const newUser = { username, email, pass, balance: 0, referrer: referrer || '', depositsCount: 0, hasPlayed: false };
+            if (referrer) {
+                const refUser = cloudState.users.find(u => u.username === referrer);
+                if (refUser) {
+                    refUser.referralsCount = (refUser.referralsCount || 0) + 1;
+                }
+            }
+
+            const newUser = { 
+                username, 
+                email, 
+                pass, 
+                balance: 0, 
+                referrer: referrer || '', 
+                referralsCount: 0,
+                depositsCount: 0, 
+                canPlay: false, 
+                openedBoxes: 0, 
+                activeDeposit: 0 
+            };
             cloudState.users.push(newUser);
             syncCloudUsers();
             setCurrentUser(newUser);
@@ -283,22 +325,23 @@
         }
 
         /* ==========================================================
-           4. ADMIN PANEL (LIVE MULTI-DEVICE SCREENSHOT VIEW & APPROVAL)
+           3. ADMIN PANEL MODULE (CLOUD SYNCED DEPOSITS & WITHDRAWS)
            ================================================---------- */
         function renderAdminPanel() {
             const pendingDeposits = cloudState.deposits.filter(d => d.status === 'pending');
+            const pendingWithdraws = cloudState.withdraws.filter(w => w.status === 'pending');
 
             const app = document.getElementById('app');
             app.innerHTML = `
                 <div class="min-h-screen bg-jasper-50 flex flex-col">
                     <header class="bg-white border-b border-jasper-200 px-6 py-4 flex justify-between items-center shadow-sm">
-                        <h2 class="text-xl font-bold text-jasper-900">Admin Panel - Live Cloud Deposit Screenshots</h2>
+                        <h2 class="text-xl font-bold text-jasper-900">Admin Panel - Cloud Management</h2>
                         <button onclick="handleLogout()" class="px-4 py-2 bg-rose-50 text-rose-600 font-medium rounded-xl text-sm">Sign Out</button>
                     </header>
                     <main class="flex-1 max-w-7xl w-full mx-auto p-6 space-y-8">
                         <section class="bg-white rounded-2xl shadow-sm border border-jasper-100 p-6">
-                            <h3 class="text-lg font-bold text-jasper-900 mb-4">Pending Deposits & Screenshots from All Devices</h3>
-                            ${pendingDeposits.length === 0 ? '<p class="text-gray-500 text-sm">No pending deposit requests available.</p>' : `
+                            <h3 class="text-lg font-bold text-jasper-900 mb-4">Pending Deposit Screenshots (All Image Formats)</h3>
+                            ${pendingDeposits.length === 0 ? '<p class="text-gray-500 text-sm">No pending deposit requests.</p>' : `
                                 <div class="overflow-x-auto">
                                     <table class="w-full text-left text-sm">
                                         <thead class="bg-jasper-50 text-jasper-800 uppercase text-xs">
@@ -320,6 +363,37 @@
                                                     <td class="p-3 flex gap-2">
                                                         <button onclick="approveDeposit('${d.id}')" class="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-semibold">Approve</button>
                                                         <button onclick="rejectDeposit('${d.id}')" class="px-3 py-1.5 bg-rose-600 text-white rounded-lg text-xs font-semibold">Reject</button>
+                                                    </td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            `}
+                        </section>
+
+                        <section class="bg-white rounded-2xl shadow-sm border border-jasper-100 p-6">
+                            <h3 class="text-lg font-bold text-jasper-900 mb-4">Pending Withdraw Requests</h3>
+                            ${pendingWithdraws.length === 0 ? '<p class="text-gray-500 text-sm">No pending withdraw requests.</p>' : `
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-left text-sm">
+                                        <thead class="bg-jasper-50 text-jasper-800 uppercase text-xs">
+                                            <tr>
+                                                <th class="p-3">Username</th>
+                                                <th class="p-3">Amount</th>
+                                                <th class="p-3">Account Details</th>
+                                                <th class="p-3">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-jasper-100">
+                                            ${pendingWithdraws.map(w => `
+                                                <tr>
+                                                    <td class="p-3 font-medium">${w.username}</td>
+                                                    <td class="p-3 font-bold text-emerald-600">Rs. ${w.amount}</td>
+                                                    <td class="p-3 text-xs text-gray-600">${w.accountDetails}</td>
+                                                    <td class="p-3 flex gap-2">
+                                                        <button onclick="approveWithdraw('${w.id}')" class="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-semibold">Approve</button>
+                                                        <button onclick="rejectWithdraw('${w.id}')" class="px-3 py-1.5 bg-rose-600 text-white rounded-lg text-xs font-semibold">Reject</button>
                                                     </td>
                                                 </tr>
                                             `).join('')}
@@ -364,7 +438,9 @@
             if (user) {
                 user.balance = (user.balance || 0) + dep.amount;
                 user.depositsCount = (user.depositsCount || 0) + 1;
-                user.hasPlayed = false;
+                user.canPlay = true;
+                user.openedBoxes = 0;
+                user.activeDeposit = dep.amount;
                 syncCloudUsers();
             }
 
@@ -382,6 +458,31 @@
             }
         }
 
+        function approveWithdraw(wid) {
+            const w = cloudState.withdraws.find(item => item.id === wid);
+            if (w) {
+                w.status = 'approved';
+                syncCloudWithdraws();
+                showToast('Withdraw approved!');
+                renderAdminPanel();
+            }
+        }
+
+        function rejectWithdraw(wid) {
+            const w = cloudState.withdraws.find(item => item.id === wid);
+            if (w) {
+                w.status = 'rejected';
+                const user = cloudState.users.find(u => u.username === w.username);
+                if (user) {
+                    user.balance = (user.balance || 0) + w.amount;
+                    syncCloudUsers();
+                }
+                syncCloudWithdraws();
+                showToast('Withdraw rejected and refunded!', 'error');
+                renderAdminPanel();
+            }
+        }
+
         function handleLogout() {
             setCurrentUser(null);
             showToast('Signed out successfully');
@@ -389,11 +490,11 @@
         }
 
         /* ==========================================================
-           5. USER DASHBOARD & CLOUD SCREENSHOT UPLOAD
+           4. USER DASHBOARD & GAMEPLAY MODULE
            ================================================---------- */
-        function renderDashboard() {
+        function renderDashboard(hash) {
             const user = getCurrentUser();
-            const currentUserData = cloudState.users.find(u => u.username === user.username) || user;
+            const dbUser = cloudState.users.find(u => u.username === user.username) || user;
 
             const app = document.getElementById('app');
             app.innerHTML = `
@@ -401,34 +502,79 @@
                     <header class="bg-white border-b border-jasper-200 px-6 py-4 flex justify-between items-center shadow-sm">
                         <h2 class="text-xl font-bold text-jasper-900 cursor-pointer" onclick="window.location.hash='home'">Boxify Gift</h2>
                         <div class="flex items-center gap-4">
-                            <span class="text-sm font-semibold text-gray-700">Welcome, ${currentUserData.username}</span>
+                            <span class="text-sm font-semibold text-gray-700">${dbUser.username}</span>
                             <button onclick="handleLogout()" class="px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg text-xs font-semibold">Sign Out</button>
                         </div>
                     </header>
+
+                    <div class="bg-white border-b border-jasper-200 px-6 py-3 flex gap-6 text-sm font-medium">
+                        <a href="#home" class="${hash === 'home' ? 'text-jasper-600 border-b-2 border-jasper-600 pb-1' : 'text-gray-600'}">Game & Deposit</a>
+                        <a href="#referral" class="${hash === 'referral' ? 'text-jasper-600 border-b-2 border-jasper-600 pb-1' : 'text-gray-600'}">Referral & Withdraw</a>
+                    </div>
+
                     <main class="flex-1 max-w-4xl w-full mx-auto p-4 space-y-6">
-                        <div class="text-center py-4 bg-white rounded-2xl shadow-sm border p-4">
-                            <span class="text-xs font-semibold uppercase text-gray-500">Available Balance</span>
-                            <h3 class="text-3xl font-extrabold text-jasper-900 mt-1">Rs. ${currentUserData.balance || 0}</h3>
-                        </div>
-
-                        <div class="bg-gradient-to-r from-jasper-800 to-jasper-700 text-white rounded-2xl p-6 shadow-md space-y-4">
-                            <h4 class="font-bold text-lg">Deposit Minimum Rs. 100 via Easypaisa</h4>
-                            <p class="text-xs text-jasper-100">Account Number: <strong>03074591741</strong> (Name: Adnan Ahmad)</p>
-                            <button onclick="openDepositModal()" class="w-full py-3 bg-white text-jasper-900 font-bold rounded-xl shadow text-sm">Upload Deposit Screenshot</button>
-                        </div>
-
-                        <div class="bg-white rounded-2xl shadow-sm border p-6 text-center">
-                            <h3 class="text-xl font-bold text-jasper-900 mb-2">Select Mystery Boxes</h3>
-                            <div class="grid grid-cols-3 sm:grid-cols-5 gap-3">
-                                ${Array.from({length: 15}).map((_, i) => `
-                                    <div onclick="handleBoxClick(${i})" id="box-${i}" class="aspect-square bg-jasper-600 rounded-2xl shadow flex flex-col items-center justify-center cursor-pointer text-white p-2 hover:bg-jasper-700 transition">
-                                        <i class="fa-solid fa-box-open text-2xl mb-1 text-amber-300"></i>
-                                        <span class="text-xs">Box #${i+1}</span>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
+                        ${hash === 'referral' ? renderReferralView(dbUser) : renderGameView(dbUser)}
                     </main>
+                </div>
+            `;
+        }
+
+        function renderGameView(dbUser) {
+            return `
+                <div class="text-center py-4 bg-white rounded-2xl shadow-sm border p-4">
+                    <span class="text-xs font-semibold uppercase text-gray-500">Available Balance</span>
+                    <h3 class="text-3xl font-extrabold text-jasper-900 mt-1">Rs. ${dbUser.balance || 0}</h3>
+                </div>
+
+                <div class="bg-gradient-to-r from-jasper-800 to-jasper-700 text-white rounded-2xl p-6 shadow-md space-y-4">
+                    <h4 class="font-bold text-lg">Deposit via Easypaisa</h4>
+                    <p class="text-xs text-jasper-100">Account Number: <strong>03074591741</strong> (Name: Adnan Ahmad)</p>
+                    <button onclick="openDepositModal()" class="w-full py-3 bg-white text-jasper-900 font-bold rounded-xl shadow text-sm">Upload Deposit Screenshot</button>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border p-6 text-center">
+                    <h3 class="text-xl font-bold text-jasper-900 mb-2">Mystery Boxes (Open Exactly 3 Boxes)</h3>
+                    <p class="text-xs text-gray-500 mb-4">${dbUser.canPlay ? `Boxes opened: ${dbUser.openedBoxes || 0} / 3` : 'Deposit and get admin approval to play your 3 boxes.'}</p>
+                    <div class="grid grid-cols-3 sm:grid-cols-5 gap-3">
+                        ${Array.from({length: 15}).map((_, i) => `
+                            <div onclick="handleBoxClick(${i})" id="box-${i}" class="aspect-square bg-jasper-600 rounded-2xl shadow flex flex-col items-center justify-center cursor-pointer text-white p-2 hover:bg-jasper-700 transition">
+                                <i class="fa-solid fa-box-open text-2xl mb-1 text-amber-300"></i>
+                                <span class="text-xs">Box #${i+1}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderReferralView(dbUser) {
+            const referralLink = `${window.location.origin}${window.location.pathname}?ref=${dbUser.username}`;
+            const refCount = dbUser.referralsCount || 0;
+            const canWithdraw = refCount >= 5;
+
+            return `
+                <div class="bg-white rounded-2xl shadow-sm border p-6 space-y-4">
+                    <h3 class="text-lg font-bold text-jasper-900">Referral Program</h3>
+                    <p class="text-xs text-gray-600">Share your referral link with friends. You need at least <strong>5 referrals</strong> to unlock withdrawals.</p>
+                    <div class="flex gap-2">
+                        <input type="text" readonly value="${referralLink}" class="w-full px-3 py-2 bg-jasper-50 rounded-xl text-xs border border-jasper-200">
+                        <button onclick="navigator.clipboard.writeText('${referralLink}');showToast('Referral link copied!');" class="px-4 py-2 bg-jasper-600 text-white rounded-xl text-xs font-semibold">Copy</button>
+                    </div>
+                    <p class="text-xs font-semibold text-jasper-800">Your Referrals: ${refCount} / 5</p>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border p-6 space-y-4">
+                    <h3 class="text-lg font-bold text-jasper-900">Withdraw Funds</h3>
+                    <p class="text-xs text-gray-600">Withdrawal requires a minimum of 5 successful referrals.</p>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-gray-600 mb-1">Amount</label>
+                        <input type="number" id="withdraw-amount" placeholder="Enter amount" class="w-full px-4 py-2.5 rounded-xl border border-jasper-200 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-gray-600 mb-1">Easypaisa / Bank Details</label>
+                        <input type="text" id="withdraw-details" placeholder="Account Title & Number" class="w-full px-4 py-2.5 rounded-xl border border-jasper-200 text-sm">
+                    </div>
+                    <button onclick="submitWithdraw(${canWithdraw})" class="w-full py-3 ${canWithdraw ? 'bg-jasper-600 hover:bg-jasper-700 text-white' : 'bg-gray-300 text-gray-500 cursor-not-allowed'} font-semibold rounded-xl text-sm">Request Withdrawal</button>
                 </div>
             `;
         }
@@ -438,7 +584,7 @@
             modal.innerHTML = `
                 <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
                     <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
-                        <h3 class="text-lg font-bold text-jasper-900">Upload Deposit Screenshot (Any Image Format)</h3>
+                        <h3 class="text-lg font-bold text-jasper-900">Upload Deposit Screenshot (All Formats)</h3>
                         <input type="file" id="deposit-file-input" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-jasper-50 file:text-jasper-700">
                         <div class="flex gap-3 pt-2">
                             <button onclick="closeModal()" class="flex-1 py-2.5 bg-gray-100 text-gray-700 rounded-xl text-sm">Cancel</button>
@@ -475,30 +621,74 @@
                 syncCloudDeposits();
 
                 closeModal();
-                showToast('Deposit screenshot uploaded to Firebase cloud successfully!');
+                showToast('Deposit screenshot uploaded successfully. Wait for admin approval.');
             };
             reader.readAsDataURL(file);
         }
 
-        let gameState = { openedBoxes: [] };
+        function submitWithdraw(canWithdraw) {
+            if (!canWithdraw) {
+                showToast('You need at least 5 referrals to withdraw!', 'error');
+                return;
+            }
+
+            const user = getCurrentUser();
+            const dbUser = cloudState.users.find(u => u.username === user.username);
+            const amount = parseFloat(document.getElementById('withdraw-amount').value);
+            const details = document.getElementById('withdraw-details').value.trim();
+
+            if (!amount || amount <= 0 || amount > (dbUser.balance || 0)) {
+                showToast('Invalid withdraw amount!', 'error');
+                return;
+            }
+            if (!details) {
+                showToast('Please provide account details!', 'error');
+                return;
+            }
+
+            dbUser.balance -= amount;
+            syncCloudUsers();
+            setCurrentUser(dbUser);
+
+            const newWithdraw = {
+                id: 'w_' + Date.now(),
+                username: dbUser.username,
+                amount: amount,
+                accountDetails: details,
+                status: 'pending',
+                timestamp: Date.now()
+            };
+
+            cloudState.withdraws.push(newWithdraw);
+            syncCloudWithdraws();
+
+            showToast('Withdrawal request submitted successfully!');
+            router();
+        }
 
         function handleBoxClick(index) {
             const user = getCurrentUser();
             const dbUser = cloudState.users.find(u => u.username === user.username) || user;
 
-            if (!dbUser || dbUser.balance <= 0) {
+            if (!dbUser.canPlay) {
                 showToast('Please deposit first and wait for admin approval!', 'error');
                 return;
             }
-            if (gameState.openedBoxes.includes(index)) {
-                showToast('This box has already been opened!', 'error');
+
+            const opened = dbUser.openedBoxes || 0;
+            if (opened >= 3) {
+                showToast('You have already opened 3 boxes for this deposit! Please make a new deposit to play again.', 'error');
                 return;
             }
 
-            gameState.openedBoxes.push(index);
+            dbUser.openedBoxes = opened + 1;
             const reward = Math.floor(Math.random() * 20) + 10;
-            
-            dbUser.balance += reward;
+            dbUser.balance = (dbUser.balance || 0) + reward;
+
+            if (dbUser.openedBoxes >= 3) {
+                dbUser.canPlay = false;
+            }
+
             syncCloudUsers();
             setCurrentUser(dbUser);
 
@@ -508,7 +698,7 @@
                 boxEl.innerHTML = `<i class="fa-solid fa-coins text-2xl mb-1 text-amber-300"></i><span class="text-xs font-bold">+Rs. ${reward}</span>`;
             }
 
-            showToast(`You have won Rs. ${reward}!`);
+            showToast(`You won Rs. ${reward}! Boxes opened: ${dbUser.openedBoxes}/3`);
             setTimeout(() => router(), 1500);
         }
 
